@@ -1,9 +1,41 @@
+/*
+ * A message is constructed by:
+ * Header (1st line)
+ * Body (proceeding lines)
+ */
+#[derive(Debug)]
 pub struct Message {
-  pub r#type: Types,
-  pub scope: Option<String>,
-  pub content: String
+  pub header: Header,
+  pub body: Body
 }
 
+#[derive(Debug)]
+pub struct Header {
+  pub r#type: Types,
+  pub scope: Option<String>,
+  pub content: String,
+  pub breaking_change: BreakingChange
+}
+
+#[derive(Debug)]
+pub struct Body {
+  pub breaking_change: BreakingChange
+}
+
+#[derive(Debug)]
+pub struct BreakingChange {
+  pub detected: bool,
+  pub message: Option<String>
+}
+
+pub const BODY_BREAKING_CHANGE_SEPARATOR: char = ':';
+
+pub const BODY_BREAKING_CHANGE_INDICATORS: &[&str; 2] = &[
+  "BREAKING CHANGE",
+  "BREAKING CHANGES"
+];
+
+#[derive(Debug)]
 pub enum Types {
   Feat,
   Fix,

@@ -1,5 +1,3 @@
-use std::error::Error;
-
 pub struct SemVer {
   pub major: Option<u64>,
   pub minor: Option<u64>,
@@ -9,7 +7,7 @@ pub struct SemVer {
 #[derive(Debug)]
 pub struct SemVerError {}
 
-impl TryInto<String> for SemVer {
+impl TryInto<String> for &SemVer {
   type Error = SemVerError;
 
   fn try_into(self) -> Result<String, Self::Error> {

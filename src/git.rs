@@ -1,15 +1,24 @@
 use std::process::Command;
 
+#[derive(Debug)]
 pub struct GitLog {
   pub message: String
 }
 
-pub fn get_log_messages (from: &str, to: &str) -> Vec<GitLog> {
-  let log_output = Command::new("git")
+pub fn get_log_messages (from: &str, to: &str, cwd: Option<String>) -> Vec<GitLog> {
+  let mut command = Command::new("git");
+  let log_command = command
     .args(&[
       "log",
+      "--pretty=format:%s",
       &format!("{}..{}", from, to)
-    ]).output().expect("Failed to execute git log command");
+    ]);
+
+  if let Some(cwd) = cwd {
+    log_command.current_dir(cwd);
+  }
+
+  let log_output = log_command.output().expect("Failed to execute git log command");
 
   if log_output.stdout.is_empty() {
     panic!("No commits found between {} and {}", from, to);

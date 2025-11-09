@@ -13,7 +13,7 @@ struct MetafileProject {
   version: String
 }
 
-pub fn write_semver (path_to_metafile: &str, semver: SemVer) -> () {
+pub fn write_semver (path_to_metafile: &str, semver: &SemVer) -> () {
   let metafile_str = fs::read_to_string(path_to_metafile).expect("Couldn't read metafile");
   let mut metafile = serde_xml_rs::from_str::<Metafile>(&metafile_str).expect("Couldn't parse metafile");
 

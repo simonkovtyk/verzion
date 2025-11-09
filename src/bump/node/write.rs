@@ -8,7 +8,7 @@ struct Metafile {
   version: String
 }
 
-pub fn write_semver (path_to_metafile: &str, semver: SemVer) -> () {
+pub fn write_semver (path_to_metafile: &str, semver: &SemVer) -> () {
   let metafile_buf = fs::read(path_to_metafile).expect("Couldn't read metafile");
   let mut metafile = serde_json::from_slice::<Metafile>(&metafile_buf).expect("Couldn't parse metafile");
 

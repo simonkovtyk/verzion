@@ -4,7 +4,13 @@ pub fn get_semver_type (messages: Vec<Message>) -> SemVerType {
   let mut current_semver_type = None;
 
   for message in messages {
-    let semver_type = match message.r#type {
+    // We could know if a breaking change occurred. Since it is the highest semver type, we can skip any other message.
+    if message.header.breaking_change.detected || message.body.breaking_change.detected {
+      current_semver_type = Some(SemVerType::Major);
+      break;
+    }
+
+    let semver_type = match message.header.r#type {
       Types::Fix => {
         Some(SemVerType::Patch)
       },

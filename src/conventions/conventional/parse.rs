@@ -1,68 +1,130 @@
-use crate::{conventions::conventional::types::{Message, Types}, git::GitLog};
+use crate::{conventions::conventional::types::{BODY_BREAKING_CHANGE_INDICATORS, BODY_BREAKING_CHANGE_SEPARATOR, Body, BreakingChange, Header, Message, Types}, git::GitLog};
 
-pub fn parse_message (message: &str) -> Message {
+pub fn parse_header (raw_header: &str) -> Option<Header> {
   let mut r#type = String::new();
   let mut scope = String::new();
   let mut content = String::new();
   let mut type_endend = false;
   let mut scope_detected = false;
   let mut scope_ended = false;
+  let mut has_explicit_breaking_change = false;
 
-  for message_char in message.chars() {
+  // I hate Regex, I do it char by char
+  for raw_header_char in raw_header.chars() {
     if !type_endend {
+      /* Breaking change detected, so continue and find out if scope follows */
+      if raw_header_char == '!' {
+        has_explicit_breaking_change = true;
+        continue;
+      }
+
       /* No scope detected, continue with content */
-      if message_char == ':' {
+      if raw_header_char == ':' {
         type_endend = true;
         continue;
       }
 
       /* Scope detected so continue with it */
-      if message_char == '(' {
+      if raw_header_char == '(' {
         scope_detected = true;
         type_endend = true;
         continue;
       }
 
-      r#type.push(message_char);
+      r#type.push(raw_header_char);
       continue;
     }
 
     if scope_detected && !scope_ended {
-      if message_char == ')' {
+      if raw_header_char == ')' {
         scope_ended = true;
         continue;
       }
 
-      scope.push(message_char);
+      scope.push(raw_header_char);
       continue;
     }
 
-    content.push(message_char);
+    content.push(raw_header_char);
   }
 
+  /* Message could not be parsed, so exit without */
   if r#type.is_empty() || content.is_empty() {
-    panic!("Could not parse message: Missing type or content. Ensure the message follows the 'type(scope): content' format. Example: 'feat(parser): Add support for parsing messages' or 'fix()")
+    return None;
   }
 
-  return Message {
+  return Some(Header {
     r#type: Types::from(r#type.as_str()),
     content: content.trim().to_string(),
-    scope: Some(scope)
-  };
+    scope: Some(scope),
+    breaking_change: BreakingChange {
+      detected: has_explicit_breaking_change,
+      /* Breaking change message cannot exist in header of message */
+      message: None
+    }
+  });
 }
 
-pub fn parse_logs (logs: Vec<GitLog>) -> Vec<Message> {
+pub fn parse_body (raw_body: &str) -> Body {
+  let mut detected = false;
+  let mut message = None;
+
+  // I still hate regex, so line by line
+  for line in raw_body.lines() {
+    for indicator in BODY_BREAKING_CHANGE_INDICATORS {
+      let index = line.find(indicator);
+
+      if index.is_none() {
+        continue;
+      }
+
+      detected = true;
+
+      let message_byte_offset =
+        index.unwrap() as u32
+        + indicator.len() as u32
+        + BODY_BREAKING_CHANGE_SEPARATOR.len_utf8() as u32
+        + ' '.len_utf8() as u32;
+
+      message = Some(line[(message_byte_offset as usize)..].to_string());
+
+      break;
+    }
+
+    if detected {
+      break;
+    }
+  }
+
+  return Body {
+    breaking_change: BreakingChange {
+      detected,
+      message
+    }
+  }
+}
+
+pub fn parse_logs (logs: &Vec<GitLog>) -> Vec<Message> {
   let mut messages = Vec::new();
 
   for log in logs {
-    let message = log.message.lines().next();
+    let mut lines = log.message.lines();
+    let header;
 
-    if message.is_none() {
+    if let Some(raw_header) = lines.next() && let Some(parsed_header) = parse_header(raw_header) {
+      header = parsed_header;
+    } else {
+      // Messages without/invalid header doesnt exist, so skip it
       continue;
     }
 
+    let body = parse_body(&lines.collect::<Vec<&str>>().join("\n"));
+
     messages.push(
-      parse_message(message.unwrap())
+      Message {
+        header,
+        body
+      }
     );
   }
 
