@@ -24,7 +24,7 @@ This Rust-based tool designed to simplify version management and changelog gener
 ## Integrations
 It supports multiple project types, making it easy to integrate into diverse development environments.
 
-✅ **Plain** Updates version in any plain file automatically.\
+✅ **Plain:** Updates version in any plain file automatically.\
 ✅ **Java (Maven):** Updates version in `pom.xml` files automatically.\
 ✅ **Node.js:** Updates `package.json` versions seamlessly.
 
