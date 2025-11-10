@@ -1,4 +1,4 @@
-use std::{env, fs, path::Path};
+use std::{env, fs};
 use serde::{Deserialize, Serialize};
 
 pub const CONFIG_FILE_NAME: &str = "nexlog.json";
@@ -25,6 +25,7 @@ pub struct BumpTarget {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BumpConfig {
+  pub enabled: Option<bool>,
   pub convention: Option<BumpConvetion>,
   pub targets: Option<Vec<BumpTarget>>
 }
@@ -33,7 +34,7 @@ pub struct BumpConfig {
 pub struct Config {
   /* Accept multiple paths for e.g. monorepos */
   pub paths: Option<Vec<String>>,
-  pub bump: BumpConfig
+  pub bump: Option<BumpConfig>
 }
 
 pub fn get_config (path: Option<String>) -> Config {

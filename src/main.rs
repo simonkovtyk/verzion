@@ -9,6 +9,7 @@ mod semver;
 mod std;
 mod bump;
 mod commands;
+mod markdown;
 
 fn main() {
   let args = Args::parse();

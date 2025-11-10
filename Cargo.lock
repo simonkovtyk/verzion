@@ -129,16 +129,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 
 [[package]]
-name = "nexlog"
-version = "0.1.0"
-dependencies = [
- "clap",
- "serde",
- "serde-xml-rs",
- "serde_json",
-]
-
-[[package]]
 name = "once_cell_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -271,6 +261,16 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
+
+[[package]]
+name = "verzion"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+]
 
 [[package]]
 name = "windows-link"
