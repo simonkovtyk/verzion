@@ -1,9 +1,11 @@
+#[allow(dead_code)]
 pub struct Image {
   src: String,
   alt: Option<String>
 }
 
 impl Image {
+  #[allow(dead_code)]
   pub fn new (src: impl Into<String>, alt: Option<impl Into<String>>) -> Self {
     Image {
       src: src.into(),

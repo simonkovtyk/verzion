@@ -1,8 +1,10 @@
+#[allow(dead_code)]
 pub struct ListItem {
   value: String
 }
 
 impl ListItem {
+  #[allow(dead_code)]
   pub fn new (value: impl Into<String>) -> Self {
     Self { value: value.into() }
   }
@@ -20,12 +22,14 @@ impl ToString for ListItem {
   }
 }
 
+#[allow(dead_code)]
 pub struct List {
   items: Vec<ListItem>,
   ordered: bool
 }
 
 impl List {
+  #[allow(dead_code)]
   pub fn new (ordered: Option<bool>) -> Self {
     Self {
       items: Vec::new(),
@@ -33,6 +37,7 @@ impl List {
     }
   }
 
+  #[allow(dead_code)]
   pub fn add (&mut self, item: ListItem) -> &Self {
     self.items.push(item);
 

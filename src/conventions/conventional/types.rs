@@ -1,15 +1,18 @@
+use crate::git::log::GitLog;
+
 /*
  * A message is constructed by:
  * Header (1st line)
  * Body (proceeding lines)
  */
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Message {
   pub header: Header,
-  pub body: Body
+  pub body: Body,
+  pub log: GitLog
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Header {
   pub r#type: Types,
   pub scope: Option<String>,
@@ -17,12 +20,12 @@ pub struct Header {
   pub breaking_change: BreakingChange
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Body {
   pub breaking_change: BreakingChange
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BreakingChange {
   pub detected: bool,
   pub message: Option<String>
@@ -35,7 +38,7 @@ pub const BODY_BREAKING_CHANGE_INDICATORS: &[&str; 2] = &[
   "BREAKING CHANGES"
 ];
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Types {
   Feat,
   Fix,

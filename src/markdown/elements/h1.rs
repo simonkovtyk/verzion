@@ -1,11 +1,13 @@
-struct H1 {
+#[allow(dead_code)]
+pub struct H1 {
   value: String
 }
 
 impl H1 {
-  pub fn new (value: &str) -> Self {
+  #[allow(dead_code)]
+  pub fn new (value: impl Into<String>) -> Self {
     H1 {
-      value: value.to_string()
+      value: value.into()
     }
   }
 }

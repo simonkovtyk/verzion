@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub struct Code {
   language: Option<String>,
   value: String
@@ -6,6 +7,7 @@ pub struct Code {
 const TAG: &str = "```";
 
 impl Code {
+  #[allow(dead_code)]
   pub fn new (value: String, language: Option<impl Into<String>>) -> Self {
     Code {
       language: language.map(|v| v.into()),

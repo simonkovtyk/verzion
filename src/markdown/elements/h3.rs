@@ -1,8 +1,10 @@
-struct H3 {
+#[allow(dead_code)]
+pub struct H3 {
   value: String
 }
 
 impl H3 {
+  #[allow(dead_code)]
   pub fn new (value: &str) -> Self {
     H3 {
       value: value.to_string()

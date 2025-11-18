@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub enum AlertType {
   Note,
   Tip,
@@ -18,12 +19,14 @@ impl ToString for AlertType {
   }
 }
 
+#[allow(dead_code)]
 pub struct Alert {
   r#type: AlertType,
   value: String
 }
 
 impl Alert {
+  #[allow(dead_code)]
   pub fn new (r#type: AlertType, value: &str) -> Self {
     Alert {
       r#type,

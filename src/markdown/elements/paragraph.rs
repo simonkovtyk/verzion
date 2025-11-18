@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub enum ParagraphStyle {
   None,
   Bold,
@@ -9,20 +10,34 @@ pub enum ParagraphStyle {
   AllBoldAndItalic
 }
 
+#[allow(dead_code)]
 const BOLD_TAG: &str = "**";
+#[allow(dead_code)]
 const BOLD_ALT_TAG: &str = "__";
+#[allow(dead_code)]
 const ITALIC_TAG: &str = "*";
+#[allow(dead_code)]
 const ITALIC_ALT_TAG: &str = "_";
+#[allow(dead_code)]
 const STRIKETHROUGH_TAG: &str = "~~";
+#[allow(dead_code)]
 const STRIKETHROUGH_ALT_TAG: &str = "~";
+#[allow(dead_code)]
 const SUBSCRIPT_OPEN_TAG: &str = "<sub>";
+#[allow(dead_code)]
 const SUBSCRIPT_CLOSE_TAG: &str = "</sub>";
+#[allow(dead_code)]
 const SUPERSCRIPT_OPEN_TAG: &str = "<sup>";
+#[allow(dead_code)]
 const SUPERSCRIPT_CLOSE_TAG: &str = "</sup>";
+#[allow(dead_code)]
 const UNDERLINE_OPEN_TAG: &str = "<ins>";
+#[allow(dead_code)]
 const UNDERLINE_CLOSE_TAG: &str = "</ins>";
+#[allow(dead_code)]
 const ALL_BOLD_AND_ITALIC_TAG: &str = "***";
 
+#[allow(dead_code)]
 pub struct Paragraph {
   value: String,
   style: ParagraphStyle,
@@ -30,6 +45,7 @@ pub struct Paragraph {
 }
 
 impl Paragraph {
+  #[allow(dead_code)]
   pub fn new (value: impl Into<String>, style: Option<impl Into<ParagraphStyle>>, use_alt: Option<impl Into<bool>>) -> Self {
     Self {
       value: value.into(),

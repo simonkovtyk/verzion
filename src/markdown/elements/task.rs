@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub struct TaskItem {
   value: String,
   description: Option<String>,
@@ -5,6 +6,7 @@ pub struct TaskItem {
 }
 
 impl TaskItem {
+  #[allow(dead_code)]
   pub fn new (value: impl Into<String>, description: Option<impl Into<String>>, checked: Option<impl Into<bool>>) -> Self {
     Self {
       value: value.into(),
@@ -36,17 +38,20 @@ impl ToString for TaskItem {
   }
 }
 
+#[allow(dead_code)]
 pub struct Tasks {
   items: Vec<TaskItem>
 }
 
 impl Tasks {
+  #[allow(dead_code)]
   pub fn new () -> Self {
     Self {
       items: Vec::new(),
     }
   }
 
+  #[allow(dead_code)]
   pub fn add (&mut self, item: TaskItem) -> &Self {
     self.items.push(item);
 

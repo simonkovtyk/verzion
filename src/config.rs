@@ -1,6 +1,8 @@
 use std::{env, fs};
 use serde::{Deserialize, Serialize};
 
+use crate::webhooks::{config::WebhookConfig};
+
 pub const CONFIG_FILE_NAME: &str = "nexlog.json";
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -24,27 +26,30 @@ pub struct BumpTarget {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct BumpConfig {
-  pub enabled: Option<bool>,
-  pub convention: Option<BumpConvetion>,
-  pub targets: Option<Vec<BumpTarget>>
+pub struct ChangelogConfig {
+  pub path: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
   /* Accept multiple paths for e.g. monorepos */
   pub paths: Option<Vec<String>>,
-  pub bump: Option<BumpConfig>
+  pub colored: Option<bool>,
+  pub enabled: Option<bool>,
+  pub convention: Option<BumpConvetion>,
+  pub targets: Option<Vec<BumpTarget>>,
+  pub changelog: Option<ChangelogConfig>,
+  pub gitlab: Option<WebhookConfig>,
+  pub github: Option<WebhookConfig>
 }
 
-pub fn get_config (path: Option<String>) -> Config {
+pub fn get_config (path: &Option<String>) -> Config {
   let mut resulting_path = env::current_dir().expect("Couldn't get current directory").join(CONFIG_FILE_NAME).to_str().unwrap().to_string();
 
   if let Some(path) = path {
-    resulting_path = path;
+    resulting_path = path.to_string();
   }
 
-  println!("{}", resulting_path);
   let content_buf = fs::read(resulting_path).expect("Couldn't read config file");
 
   return serde_json::from_slice::<Config>(&content_buf).expect("Couldn't parse config file");

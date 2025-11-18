@@ -1,9 +1,11 @@
+#[allow(dead_code)]
 pub struct Link {
   href: String,
   text: String
 }
 
 impl Link {
+  #[allow(dead_code)]
   pub fn new (href: impl Into<String>, text: impl Into<String>) -> Self {
     Link {
       href: href.into(),

@@ -1,4 +1,4 @@
-use crate::{conventions::conventional::types::{BODY_BREAKING_CHANGE_INDICATORS, BODY_BREAKING_CHANGE_SEPARATOR, Body, BreakingChange, Header, Message, Types}, git::GitLog};
+use crate::{conventions::conventional::types::{BODY_BREAKING_CHANGE_INDICATORS, BODY_BREAKING_CHANGE_SEPARATOR, Body, BreakingChange, Header, Message, Types}, git::log::GitLog};
 
 pub fn parse_header (raw_header: &str) -> Option<Header> {
   let mut r#type = String::new();
@@ -7,41 +7,55 @@ pub fn parse_header (raw_header: &str) -> Option<Header> {
   let mut type_endend = false;
   let mut scope_detected = false;
   let mut scope_ended = false;
+  let mut scope_closed = false;
   let mut has_explicit_breaking_change = false;
+  let mut skip_next_char = false;
 
   // I hate Regex, I do it char by char
   for raw_header_char in raw_header.chars() {
+    if skip_next_char {
+      skip_next_char = false;
+      continue;
+    }
+
     if !type_endend {
-      /* Breaking change detected, so continue and find out if scope follows */
-      if raw_header_char == '!' {
-        has_explicit_breaking_change = true;
-        continue;
+      match raw_header_char {
+        ':' => {
+          type_endend = true;
+        },
+        '(' => {
+          scope_detected = true;
+          type_endend = true;
+        },
+        '!' => {
+          has_explicit_breaking_change = true;
+        },
+        _ => {
+          r#type.push(raw_header_char);
+        }
       }
 
-      /* No scope detected, continue with content */
-      if raw_header_char == ':' {
-        type_endend = true;
-        continue;
-      }
-
-      /* Scope detected so continue with it */
-      if raw_header_char == '(' {
-        scope_detected = true;
-        type_endend = true;
-        continue;
-      }
-
-      r#type.push(raw_header_char);
       continue;
     }
 
     if scope_detected && !scope_ended {
-      if raw_header_char == ')' {
-        scope_ended = true;
-        continue;
+      match raw_header_char {
+        ':' => {
+          scope_ended = true;
+        },
+        '!' => {
+          if scope_closed {
+            has_explicit_breaking_change = true;
+          }
+        }
+        ')' => {
+          scope_closed = true;
+        },
+        _ => {
+          scope.push(raw_header_char);
+        }
       }
 
-      scope.push(raw_header_char);
       continue;
     }
 
@@ -56,7 +70,7 @@ pub fn parse_header (raw_header: &str) -> Option<Header> {
   return Some(Header {
     r#type: Types::from(r#type.as_str()),
     content: content.trim().to_string(),
-    scope: Some(scope),
+    scope: if scope.is_empty() { None } else { Some(scope) },
     breaking_change: BreakingChange {
       detected: has_explicit_breaking_change,
       /* Breaking change message cannot exist in header of message */
@@ -123,7 +137,8 @@ pub fn parse_logs (logs: &Vec<GitLog>) -> Vec<Message> {
     messages.push(
       Message {
         header,
-        body
+        body,
+        log: log.clone()
       }
     );
   }
