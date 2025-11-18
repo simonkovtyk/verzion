@@ -1,7 +1,6 @@
 use ::std::process;
 
 use clap::Parser;
-use merge::Merge;
 
 use crate::{commands::Args, config::{Config, get_config, merge_config}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_plain_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, semver::{SemVer, bump_semver}, webhooks::handler::handle_webhooks};
 
@@ -23,12 +22,14 @@ mod util;
 #[tokio::main]
 async fn main() {
   let args = Args::parse();
-  let mut config = get_config(&args.config);
+  let config = get_config(&args.config);
 
   merge_config(
-    &config,
-    <&commands::Args as Into<Config>>::into(&args).as_ref()
+    <&commands::Args as Into<Config>>::into(&args).as_ref(),
+    &config
   );
+
+  println!("{:?}", config);
 
   drop(args);
 

@@ -1,4 +1,4 @@
-use crate::{commands::Args, config::Config, semver::SemVer, webhooks::{github, gitlab}};
+use crate::{config::Config, semver::SemVer, webhooks::{github, gitlab}};
 
 pub async fn handle_webhooks (
   config: &Config,

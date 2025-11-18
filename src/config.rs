@@ -67,6 +67,9 @@ impl AsRef<Config> for Config {
 pub fn merge_config (a: &Config, b: &Config) -> Config {
   let mut config = a.clone();
 
+  println!("{:?}", a);
+  println!("{:?}", b);
+
   config.merge(b.clone());
   config.gitlab = merge_options(config.gitlab, b.clone().gitlab);
   config.github = merge_options(config.github, b.clone().github);
