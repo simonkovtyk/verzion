@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::header::{HeaderMap};
 
 use crate::{http::get_user_agent, semver::SemVer, webhooks::github::remote::GitHubRemote};
 
@@ -8,7 +8,7 @@ pub async fn post_create_release (
   remote: &GitHubRemote,
   semver: &SemVer,
   token: &str,
-  changelog: &str
+  changelog: &Option<String>
 ) {
   let client = reqwest::Client::new();
 
@@ -19,8 +19,6 @@ pub async fn post_create_release (
   );
   let mut headers = HeaderMap::new();
 
-  println!("{}", token);
-
   headers.insert("Accept", "application/vnd.github+json".parse().unwrap());
   headers.insert("Authorization", format!("Bearer {}", token).parse().unwrap());
   headers.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
@@ -29,16 +27,16 @@ pub async fn post_create_release (
   let mut body = HashMap::new();
   body.insert("tag_name", semver.to_string());
   body.insert("name", semver.to_string());
-  body.insert("body", changelog.to_string());
 
-  let response = client.post(
+  if let Some(inner_changelog) = changelog {
+    body.insert("body", inner_changelog.to_string());
+  }
+
+  client.post(
     url
   ).headers(headers)
     .json(&body)
     .send()
     .await
     .expect("Failed to send request");
-
-  println!("{:?}", &response);
-  println!("{:?}", response.text().await.unwrap());
 }

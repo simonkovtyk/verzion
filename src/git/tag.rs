@@ -47,6 +47,24 @@ pub fn get_tags (cwd: &Option<String>) -> Option<Vec<GitTag>> {
   Some(tags)
 }
 
+pub fn create_tag (cwd: &Option<String>, semver: &SemVer) {
+  let mut tag_command = Command::new("git");
+
+  tag_command.args(&[
+    "tag",
+    "-a",
+    &semver.to_string(),
+    "-m",
+    &semver.to_string(),
+  ]);
+
+  if let Some(cwd) = cwd {
+    tag_command.current_dir(cwd);
+  }
+
+  tag_command.output().expect("Could not execute git tag command");
+}
+
 pub fn get_log_by_tag (cwd: &Option<String>, tag: &GitTag) -> Option<GitLog> {
   let hash = get_rev_parse(cwd, &tag.annotation);
 

@@ -3,7 +3,7 @@ use reqwest;
 use url::Url;
 use urlencoding::encode;
 
-use crate::{commands::Args, config::Config, git::remote::get_remote_url, semver::SemVer, webhooks::gitlab::auth::get_token};
+use crate::{commands::Args, config::Config, git::remote::get_remote_url, semver::SemVer, webhooks::{config::get_token, gitlab::auth::GITLAB_TOKEN_ENV}};
 
 pub fn get_project_path_from_git_remote (url: &Url) -> String {
   let path = url.path();
@@ -21,9 +21,13 @@ pub fn get_request_host (url: &Url, config: &Config) -> String {
   return url.host_str().expect("No host found in URL").to_string();
 }
 
-pub async fn create_release (cwd: &Option<String>, semver: &SemVer, config: &Config, args: &Args, changelog: &str) {
-  let token = get_token(config, args);
-  let remote = get_remote_url(cwd).expect("Could not get git remote URL");
+pub async fn create_release (
+  semver: &SemVer,
+  config: &Config,
+  changelog: &Option<String>
+) {
+  let token = get_token(config, GITLAB_TOKEN_ENV);
+  let remote = get_remote_url(&config.cwd).expect("Could not get git remote URL");
 
   let url = Url::parse(&remote.url).expect("Could not parse git remote URL");
   let path = get_project_path_from_git_remote(&url);
@@ -31,13 +35,16 @@ pub async fn create_release (cwd: &Option<String>, semver: &SemVer, config: &Con
 
   let client = reqwest::Client::new();
 
-  let mut body = HashMap::<&str, &str>::new();
+  let mut body = HashMap::new();
 
   let semver = semver.to_string();
 
-  body.insert("tag_name", semver.as_str());
-  body.insert("name", semver.as_str());
-  body.insert("description", changelog);
+  body.insert("tag_name", semver.to_string());
+  body.insert("name", semver.to_string());
+
+  if let Some(inner_changelog) = changelog {
+    body.insert("description", inner_changelog.to_string());
+  }
 
   let response = client.post(
     format!(

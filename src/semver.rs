@@ -18,6 +18,12 @@ impl ToString for &SemVer {
   }
 }
 
+impl AsRef<SemVer> for SemVer {
+  fn as_ref(&self) -> &Self {
+    self
+  }
+}
+
 impl Into<String> for &SemVer {
   fn into(self) -> String {
     self.to_string()
@@ -94,6 +100,16 @@ pub enum SemVerType {
   Major = 3,
   Minor = 2,
   Patch = 1
+}
+
+impl ToString for SemVerType {
+  fn to_string(&self) -> String {
+    match self {
+      Self::Major => "major".to_string(),
+      Self::Minor => "minor".to_string(),
+      Self::Patch => "patch".to_string()
+    }
+  }
 }
 
 pub fn compare_semver_type(current: SemVerType, against: SemVerType) -> SemVerType {

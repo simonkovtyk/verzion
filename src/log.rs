@@ -1,10 +1,15 @@
 use colored::Colorize;
 
+#[allow(dead_code)]
 const WARN_PREFIX: &str = "WARN";
+#[allow(dead_code)]
 const INFO_PREFIX: &str = "INFO";
+#[allow(dead_code)]
 const ERROR_PREFIX: &str = "ERROR";
+#[allow(dead_code)]
 const SUCCESS_PREFIX: &str = "SUCCESS";
 
+#[allow(dead_code)]
 pub fn log_info (value: &str, colored: &Option<bool>) {
   let mut prefix = create_prefix(INFO_PREFIX);
 
@@ -19,6 +24,7 @@ pub fn log_info (value: &str, colored: &Option<bool>) {
   );
 }
 
+#[allow(dead_code)]
 pub fn log_error (value: &str, colored: &Option<bool>) {
   let mut prefix = create_prefix(ERROR_PREFIX);
 
@@ -33,6 +39,7 @@ pub fn log_error (value: &str, colored: &Option<bool>) {
   );
 }
 
+#[allow(dead_code)]
 pub fn log_success (value: &str, colored: &Option<bool>) {
   let mut prefix = create_prefix(SUCCESS_PREFIX);
 
@@ -47,6 +54,7 @@ pub fn log_success (value: &str, colored: &Option<bool>) {
   );
 }
 
+#[allow(dead_code)]
 pub fn log_warn (value: &str, colored: &Option<bool>) {
   let mut prefix = create_prefix(WARN_PREFIX);
 

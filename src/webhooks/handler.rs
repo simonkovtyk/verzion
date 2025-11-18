@@ -1,18 +1,15 @@
-use crate::{commands::Args, config::Config, semver::SemVer, webhooks::github};
+use crate::{commands::Args, config::Config, semver::SemVer, webhooks::{github, gitlab}};
 
 pub async fn handle_webhooks (
   config: &Config,
   semver: &SemVer,
-  args: &Args,
-  changelog: &str
+  changelog: &Option<String>
 ) {
-  println!("Creating GitHub release");
   if let Some(enabled) = config.github.clone().map(|v| v.is_enabled()) && enabled {
-    println!("Creating GitHub release");
-    github::release::create_release(semver, config, args, changelog).await;
+    github::release::create_release(semver, config, changelog).await;
   }
 
   if let Some(enabled) = config.gitlab.clone().map(|v| v.is_enabled()) && enabled {
-
+    gitlab::release::create_release(semver, config, changelog).await;
   }
 }
