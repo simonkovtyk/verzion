@@ -60,7 +60,7 @@ impl Merge for Config {
   fn merge(&self, other: &Self) -> Self {
     Config {
       references: self.references.merge(&other.references),
-      graceful: self.graceful.or(other.graceful.clone()),
+      graceful: self.graceful.or(other.graceful.clone().or(Some(false))),
       cwd: self.cwd.clone().or(other.cwd.clone()),
       colored: self.colored.or(other.colored.clone()),
       enabled: self.enabled.or(other.enabled.clone()),

@@ -24,7 +24,7 @@ impl Merge for bool {
 
 impl <T: Clone> Merge for Vec<T> {
   fn merge (&self, other: &Vec<T>) -> Vec<T> {
-    let mut data = Vec::new();
+    let mut data = Vec::with_capacity(self.len() + other.len());
 
     data.extend_from_slice(self);
     data.extend_from_slice(other);
@@ -32,3 +32,4 @@ impl <T: Clone> Merge for Vec<T> {
     data
   }
 }
+
