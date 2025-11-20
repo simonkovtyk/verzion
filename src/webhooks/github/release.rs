@@ -1,4 +1,4 @@
-use crate::{commands::Args, config::Config, git::remote::get_remote_url, semver::SemVer, webhooks::{config::get_token, github::{auth::GITHUB_TOKEN_ENV, http::post_create_release, remote::GitHubRemote}}};
+use crate::{config::Config, git::remote::get_remote_url, semver::SemVer, webhooks::{config::{WebhookType, get_token}, github::{http::post_create_release, remote::GitHubRemote}}};
 
 pub async fn create_release (
   semver: &SemVer,
@@ -18,7 +18,7 @@ pub async fn create_release (
   }
 
   let github_remote = github_remote.unwrap();
-  let token = get_token(config, GITHUB_TOKEN_ENV);
+  let token = get_token(config, &WebhookType::GitHub);
 
   post_create_release(&github_remote, semver, &token, changelog).await;
 }

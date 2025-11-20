@@ -1,9 +1,8 @@
 use std::{env, fs};
 use clap::{ValueEnum};
 use serde::{Deserialize, Serialize};
-use merge::Merge;
 
-use crate::{util::merge_options, webhooks::config::WebhookConfig};
+use crate::{std::Merge, webhooks::config::WebhookConfig};
 
 pub const CONFIG_FILE_NAME: &str = "nexlog.json";
 
@@ -33,48 +32,51 @@ pub struct ChangelogConfig {
   pub path: Option<String>
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Merge)]
+impl Merge for ChangelogConfig {
+  fn merge (&self, other: &Self) -> Self {
+    Self {
+      enabled: self.enabled.merge(&other.enabled),
+      path: self.path.clone().or(other.path.clone())
+    }
+  }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
   /* Accept multiple paths for e.g. monorepos */
-  #[merge(strategy = merge::option::overwrite_none)]
   pub references: Option<Vec<String>>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub graceful: Option<bool>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub cwd: Option<String>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub colored: Option<bool>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub enabled: Option<bool>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub convention: Option<BumpConvetion>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub targets: Option<Vec<BumpTarget>>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub changelog: Option<ChangelogConfig>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub gitlab: Option<WebhookConfig>,
-  #[merge(strategy = merge::option::overwrite_none)]
   pub github: Option<WebhookConfig>
+}
+
+impl Merge for Config {
+  fn merge(&self, other: &Self) -> Self {
+    Config {
+      references: self.references.merge(&other.references),
+      graceful: self.graceful.or(other.graceful.clone()),
+      cwd: self.cwd.clone().or(other.cwd.clone()),
+      colored: self.colored.or(other.colored.clone()),
+      enabled: self.enabled.or(other.enabled.clone()),
+      convention: self.convention.clone().or(other.convention.clone()),
+      targets: self.targets.merge(&other.targets),
+      changelog: self.changelog.merge(&other.changelog),
+      gitlab: self.gitlab.merge(&other.gitlab),
+      github: self.github.merge(&other.github)
+    }
+  }
 }
 
 impl AsRef<Config> for Config {
   fn as_ref(&self) -> &Config {
     &self
   }
-}
-
-pub fn merge_config (a: &Config, b: &Config) -> Config {
-  let mut config = a.clone();
-
-  println!("{:?}", a);
-  println!("{:?}", b);
-
-  config.merge(b.clone());
-  config.gitlab = merge_options(config.gitlab, b.clone().gitlab);
-  config.github = merge_options(config.github, b.clone().github);
-
-  config
 }
 
 pub fn get_config (path: &Option<String>) -> Config {

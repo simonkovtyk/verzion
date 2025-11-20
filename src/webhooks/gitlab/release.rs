@@ -3,7 +3,7 @@ use reqwest;
 use url::Url;
 use urlencoding::encode;
 
-use crate::{commands::Args, config::Config, git::remote::get_remote_url, semver::SemVer, webhooks::{config::get_token, gitlab::auth::GITLAB_TOKEN_ENV}};
+use crate::{commands::Args, config::Config, git::remote::get_remote_url, semver::SemVer, webhooks::{config::{WebhookType, get_token}, gitlab::auth::GITLAB_TOKEN_ENV}};
 
 pub fn get_project_path_from_git_remote (url: &Url) -> String {
   let path = url.path();
@@ -26,7 +26,7 @@ pub async fn create_release (
   config: &Config,
   changelog: &Option<String>
 ) {
-  let token = get_token(config, GITLAB_TOKEN_ENV);
+  let token = get_token(config, &WebhookType::GitLab);
   let remote = get_remote_url(&config.cwd).expect("Could not get git remote URL");
 
   let url = Url::parse(&remote.url).expect("Could not parse git remote URL");

@@ -2,7 +2,7 @@ use ::std::process;
 
 use clap::Parser;
 
-use crate::{commands::Args, config::{Config, get_config, merge_config}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_plain_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, semver::{SemVer, bump_semver}, webhooks::handler::handle_webhooks};
+use crate::{commands::Args, config::{Config, get_config}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_plain_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, semver::{SemVer, bump_semver}, std::Merge, webhooks::handler::handle_webhooks};
 
 mod git;
 mod config;
@@ -22,14 +22,11 @@ mod util;
 #[tokio::main]
 async fn main() {
   let args = Args::parse();
-  let config = get_config(&args.config);
+  let mut config = get_config(&args.config);
 
-  merge_config(
-    <&commands::Args as Into<Config>>::into(&args).as_ref(),
+  config = <&commands::Args as Into<Config>>::into(&args).as_ref().merge(
     &config
   );
-
-  println!("{:?}", config);
 
   drop(args);
 
