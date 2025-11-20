@@ -1487,6 +1487,7 @@ dependencies = [
  "clap",
  "colored",
  "merge",
+ "once_cell",
  "reqwest",
  "serde",
  "serde-xml-rs",

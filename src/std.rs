@@ -32,4 +32,3 @@ impl <T: Clone> Merge for Vec<T> {
     data
   }
 }
-

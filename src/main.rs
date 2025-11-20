@@ -2,7 +2,7 @@ use ::std::process;
 
 use clap::Parser;
 
-use crate::{commands::Args, config::{Config, get_config}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_plain_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, semver::{SemVer, bump_semver}, std::Merge, webhooks::handler::handle_webhooks};
+use crate::{commands::Args, config::{CONFIG, Config, ToExitCode, get_config}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_plain_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, semver::{SemVer}, std::Merge, webhooks::handler::handle_webhooks};
 
 mod git;
 mod config;
@@ -28,13 +28,17 @@ async fn main() {
     &config
   );
 
+  CONFIG.set(config).expect("Could not update config");
+
   drop(args);
 
-  print_header(&config.colored);
+  print_header();
 
-  log_info("Analyzing tags", &config.colored);
+  log_info("Analyzing tags");
+  
+  let config = Config::inject();
 
-  let tags = get_tags(&config.cwd);
+  let tags = get_tags(&(&config).cwd);
 
   let mut from = None::<String>;
   let mut semver = None::<SemVer>;
@@ -44,7 +48,7 @@ async fn main() {
     let latest = find_latest_semver_in_tags(&inner_tags);
 
     if let Some(inner_latest) = latest {
-      let log = get_log_by_tag(&config.cwd, &inner_latest);
+      let log = get_log_by_tag(&inner_latest);
 
       if let Some(inner_log) = log {
         log_info(
@@ -52,8 +56,7 @@ async fn main() {
             "Found latest tag with SemVer {} at {}",
             inner_latest.semver.as_ref().to_string(),
             inner_log.abbr_hash
-          ),
-          &config.colored
+          )
         );
 
         from = Some(inner_log.hash);
@@ -62,67 +65,55 @@ async fn main() {
     }
   }
 
-  let logs = get_logs(&config.cwd, from, None);
+  let logs = get_logs(&(&config).cwd, from, None);
 
   if logs.is_none() {
-    log_error("No relevant commit found, aborting", &config.colored);
-    process::exit(
-      config.graceful.map(|v| if v {
-        0
-      } else {
-        1
-      }).unwrap_or(1)
-    );
+    log_error("No relevant commit found, aborting");
+    process::exit(config.to_exit_code());
   }
 
   let logs = logs.unwrap();
-  let semver_type = resolve_semver_type(&config, &logs);
+  let semver_type = resolve_semver_type(&logs);
 
   log_info(
     &format!(
       "Next version will result in a {} upgrade",
       &semver_type.to_string().to_lowercase()
-    ),
-    &config.colored
+    )
   );
 
-  let current_semver = semver.unwrap_or(SemVer {
-    major: Some(0),
-    minor: Some(0),
-    patch: Some(0)
-  });
+  let current_semver = semver.unwrap_or(SemVer::default());
 
-  let resulting_semver = bump_semver(current_semver, semver_type);
+  let resulting_semver = current_semver.bump(&semver_type);
 
   log_info(
     &format!(
       "Next version is {}",
       resulting_semver.as_ref().to_string()
-    ),
-    &config.colored
+    )
   );
 
-  create_tag(&config.cwd, &resulting_semver);
-  log_info("Tag created", &config.colored);
-  push_tag(&config.cwd, &resulting_semver);
-  log_info("Tag pushed", &config.colored);
+  create_tag(&resulting_semver);
+  log_info("Tag created");
+  push_tag(&resulting_semver);
+  log_info("Tag pushed");
 
   let mut changelog = None;
 
-  if config.changelog.as_ref().map(|v| v.enabled).flatten().unwrap_or(true) {
-    log_info("Generating changelog", &config.colored);
-    changelog = Some(generate_changelog(&config, &logs));
-    log_info("Changelog generated", &config.colored);
+  if (&config).changelog.as_ref().map(|v| v.enabled).flatten().unwrap_or(true) {
+    log_info("Generating changelog");
+    changelog = Some(generate_changelog(&logs));
+    log_info("Changelog generated");
 
-    log_info("Writing changelog to file", &config.colored);
-    if let Some(changelog_path) = config.changelog.as_ref().map(|v| v.path.clone()).flatten() {
+    log_info("Writing changelog to file");
+    if let Some(changelog_path) = (&config).changelog.as_ref().map(|v| v.path.clone()).flatten() {
       write_plain_file(&changelog_path, &changelog.as_ref().unwrap());
     }
-    log_info("Changelog written to file", &config.colored);
+    log_info("Changelog written to file");
   }
 
-  log_info("Handle webhooks", &config.colored);
+  log_info("Handle webhooks");
   handle_webhooks(&config, &resulting_semver, &changelog).await;
-  log_info("Webhooks handled", &config.colored);
-  log_success("Completed process", &config.colored);
+  log_info("Webhooks handled");
+  log_success("Completed process");
 }

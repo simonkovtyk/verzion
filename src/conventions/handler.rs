@@ -1,6 +1,8 @@
-use crate::{config::{BumpConvetion, Config}, conventions::conventional, git::log::GitLog, semver::{SemVerType}};
+use crate::{config::{BumpConvetion, Config}, conventions::conventional, git::log::GitLog, semver::SemVerType};
 
-pub fn resolve_semver_type (config: &Config, logs: &Vec<GitLog>) -> SemVerType {
+pub fn resolve_semver_type (logs: &Vec<GitLog>) -> SemVerType {
+  let config = Config::inject();
+
   let convention = config.convention.as_ref().unwrap_or(&BumpConvetion::Conventional);
 
   match convention {
@@ -12,7 +14,9 @@ pub fn resolve_semver_type (config: &Config, logs: &Vec<GitLog>) -> SemVerType {
   }
 }
 
-pub fn generate_changelog (config: &Config, logs: &Vec<GitLog>) -> String {
+pub fn generate_changelog (logs: &Vec<GitLog>) -> String {
+  let config = Config::inject();
+
   let convention = config.convention.as_ref().unwrap_or(&BumpConvetion::Conventional);
 
   match convention {

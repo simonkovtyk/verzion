@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use crate::{git::{log::{GitLog, get_log}, rev_parse::get_rev_parse}, semver::SemVer};
+use crate::{config::Config, git::{log::{GitLog, get_log}, rev_parse::get_rev_parse}, semver::SemVer};
 
 #[derive(Debug, Clone)]
 pub struct GitTag {
@@ -47,7 +47,7 @@ pub fn get_tags (cwd: &Option<String>) -> Option<Vec<GitTag>> {
   Some(tags)
 }
 
-pub fn create_tag (cwd: &Option<String>, semver: &SemVer) {
+pub fn create_tag (semver: &SemVer) {
   let mut tag_command = Command::new("git");
 
   tag_command.args(&[
@@ -57,20 +57,22 @@ pub fn create_tag (cwd: &Option<String>, semver: &SemVer) {
     "-m",
     &semver.to_string(),
   ]);
+  
+  let config = Config::inject();
 
-  if let Some(cwd) = cwd {
+  if let Some(cwd) = config.cwd.clone() {
     tag_command.current_dir(cwd);
   }
 
   tag_command.output().expect("Could not execute git tag command");
 }
 
-pub fn get_log_by_tag (cwd: &Option<String>, tag: &GitTag) -> Option<GitLog> {
-  let hash = get_rev_parse(cwd, &tag.annotation);
+pub fn get_log_by_tag (tag: &GitTag) -> Option<GitLog> {
+  let hash = get_rev_parse(&tag.annotation);
 
   if hash.is_none() {
     return None;
   }
 
-  return get_log(cwd, &hash.unwrap());
+  return get_log(&hash.unwrap());
 }

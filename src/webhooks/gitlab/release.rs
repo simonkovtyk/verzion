@@ -14,7 +14,7 @@ pub async fn create_release (
   changelog: &Option<String>
 ) {
   let token = get_token(config, &WebhookType::GitLab);
-  let remote = get_remote_url(&config.cwd).expect("Could not get git remote URL");
+  let remote = get_remote_url().expect("Could not get git remote URL");
 
   post_create_release(
     &remote,

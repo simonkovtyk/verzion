@@ -2,6 +2,8 @@ use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 
+use crate::config::Config;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GitLog {
   pub message: String,
@@ -15,7 +17,7 @@ pub struct GitLog {
   pub abbr_hash: String
 }
 
-pub fn get_log (cwd: &Option<String>, hash: &str) -> Option<GitLog> {
+pub fn get_log (hash: &str) -> Option<GitLog> {
   let mut command = Command::new("git");
   let pretty_format = "{
 \"message\":\"%s\",
@@ -37,7 +39,9 @@ pub fn get_log (cwd: &Option<String>, hash: &str) -> Option<GitLog> {
     "--no-patch",
   ]);
 
-  if let Some(cwd) = cwd {
+  let config = Config::inject();
+
+  if let Some(cwd) = config.cwd.clone() {
     command.current_dir(cwd);
   }
 

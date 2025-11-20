@@ -1,10 +1,53 @@
 use std::ptr;
 
+use crate::config::Config;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SemVer {
   pub major: Option<u64>,
   pub minor: Option<u64>,
   pub patch: Option<u64>
+}
+
+impl SemVer {
+  pub fn bump (mut self: Self, r#type: &SemVerType) -> Self {
+    match r#type {
+      SemVerType::Major => {
+        self.major = self.major.map(|v| v + 1);
+        self.minor = Some(0);
+        self.patch = Some(0);
+      },
+      SemVerType::Minor => {
+        self.minor = self.minor.map(|v| v + 1);
+        self.patch = Some(0);
+      },
+      SemVerType::Patch => {
+        self.patch = self.patch.map(|v| v + 1);
+      }
+    };
+
+    self.clone()
+  }
+
+  pub fn format (&self, config: &Config) -> String {
+    let semver_str = self.to_string();
+    
+    if let Some(inner_semver_format) = config.semver_format.clone() {
+      return inner_semver_format.replace("{semver}", &semver_str);
+    }
+
+    semver_str
+  }
+}
+
+impl Default for SemVer {
+  fn default() -> Self {
+    Self {
+      major: Some(0),
+      minor: Some(0),
+      patch: Some(0)
+    }
+  }
 }
 
 impl ToString for &SemVer {
@@ -102,6 +145,12 @@ pub enum SemVerType {
   Patch = 1
 }
 
+impl SemVerType {
+  pub fn max_or (self: Self, against: Self) -> Self {
+    std::cmp::max(self, against)
+  }
+}
+
 impl ToString for SemVerType {
   fn to_string(&self) -> String {
     match self {
@@ -110,24 +159,4 @@ impl ToString for SemVerType {
       Self::Patch => "patch".to_string()
     }
   }
-}
-
-pub fn compare_semver_type(current: SemVerType, against: SemVerType) -> SemVerType {
-  return std::cmp::max(current, against);
-}
-
-pub fn bump_semver(mut current: SemVer, target: SemVerType) -> SemVer {
-  match target {
-    SemVerType::Major => {
-      current.major = current.major.map(|v| v + 1);
-    },
-    SemVerType::Minor => {
-      current.minor = current.minor.map(|v| v + 1);
-    },
-    SemVerType::Patch => {
-      current.patch = current.patch.map(|v| v + 1);
-    }
-  };
-
-  current
 }

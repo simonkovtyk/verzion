@@ -5,7 +5,7 @@ pub async fn create_release (
   config: &Config,
   changelog: &Option<String>
 ) {
-  let remote = get_remote_url(&config.cwd);
+  let remote = get_remote_url();
 
   if remote.is_none() {
     return;

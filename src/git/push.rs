@@ -1,8 +1,8 @@
 use std::process::Command;
 
-use crate::semver::SemVer;
+use crate::{config::Config, semver::SemVer};
 
-pub fn push_tag (cwd: &Option<String>, semver: &SemVer) {
+pub fn push_tag (semver: &SemVer) {
   let mut command = Command::new("git");
 
   command.args(&[
@@ -11,7 +11,9 @@ pub fn push_tag (cwd: &Option<String>, semver: &SemVer) {
     &semver.to_string()
   ]);
 
-  if let Some(cwd) = cwd {
+  let config = Config::inject();
+
+  if let Some(cwd) = config.cwd.clone() {
     command.current_dir(cwd);
   }
 

@@ -1,4 +1,4 @@
-use crate::{conventions::conventional::types::{Message, Types}, semver::{SemVerType, compare_semver_type}};
+use crate::{conventions::conventional::types::{Message, Types}, semver::{SemVerType}};
 
 pub fn get_semver_type (messages: Vec<Message>) -> SemVerType {
   let mut current_semver_type = None;
@@ -32,10 +32,7 @@ pub fn get_semver_type (messages: Vec<Message>) -> SemVerType {
       continue;
     }
 
-    current_semver_type = Some(compare_semver_type(
-      current_semver_type.unwrap(),
-      semver_type.unwrap()
-    ));
+    current_semver_type = Some(current_semver_type.unwrap().max_or(semver_type.unwrap()));
   }
 
   if current_semver_type.is_none() {

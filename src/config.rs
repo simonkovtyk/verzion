@@ -1,10 +1,17 @@
 use std::{env, fs};
 use clap::{ValueEnum};
+use once_cell::sync::{OnceCell};
 use serde::{Deserialize, Serialize};
 
 use crate::{std::Merge, webhooks::config::WebhookConfig};
 
-pub const CONFIG_FILE_NAME: &str = "nexlog.json";
+pub const CONFIG_FILE_NAME: &str = "verzion.json";
+
+pub static CONFIG: OnceCell<Config> = OnceCell::new();
+
+pub trait ToExitCode {
+  fn to_exit_code(&self) -> i32;
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, ValueEnum)]
 #[serde(rename_all = "lowercase")]
@@ -51,9 +58,26 @@ pub struct Config {
   pub enabled: Option<bool>,
   pub convention: Option<BumpConvetion>,
   pub targets: Option<Vec<BumpTarget>>,
+  pub semver_format: Option<String>,
   pub changelog: Option<ChangelogConfig>,
   pub gitlab: Option<WebhookConfig>,
   pub github: Option<WebhookConfig>
+}
+
+impl Config {
+  pub fn inject () -> &'static Self {
+    CONFIG.get().expect("Could not retrieve config")
+  }
+}
+
+impl ToExitCode for &Config {
+  fn to_exit_code(&self) -> i32 {
+    self.graceful.map(|v| if v {
+      0
+    } else {
+      1
+    }).unwrap_or(1)
+  }
 }
 
 impl Merge for Config {
@@ -64,11 +88,30 @@ impl Merge for Config {
       cwd: self.cwd.clone().or(other.cwd.clone()),
       colored: self.colored.or(other.colored.clone()),
       enabled: self.enabled.or(other.enabled.clone()),
+      semver_format: self.semver_format.clone().or(other.semver_format.clone()),
       convention: self.convention.clone().or(other.convention.clone()),
       targets: self.targets.merge(&other.targets),
       changelog: self.changelog.merge(&other.changelog),
       gitlab: self.gitlab.merge(&other.gitlab),
       github: self.github.merge(&other.github)
+    }
+  }
+}
+
+impl Default for Config {
+  fn default() -> Self {
+    Self {
+      references: None,
+      graceful: None,
+      cwd: None,
+      colored: None,
+      enabled: None,
+      semver_format: None,
+      convention: None,
+      targets: None,
+      changelog: None,
+      gitlab: None,
+      github: None
     }
   }
 }

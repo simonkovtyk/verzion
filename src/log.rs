@@ -1,5 +1,7 @@
 use colored::Colorize;
 
+use crate::config::Config;
+
 #[allow(dead_code)]
 const WARN_PREFIX: &str = "WARN";
 #[allow(dead_code)]
@@ -10,10 +12,11 @@ const ERROR_PREFIX: &str = "ERROR";
 const SUCCESS_PREFIX: &str = "SUCCESS";
 
 #[allow(dead_code)]
-pub fn log_info (value: &str, colored: &Option<bool>) {
+pub fn log_info (value: &str) {
+  let config = Config::inject();
   let mut prefix = create_prefix(INFO_PREFIX);
 
-  if colored.unwrap_or(true) {
+  if config.colored.unwrap_or(true) {
     prefix = prefix.blue().bold().to_string();
   }
 
@@ -25,10 +28,11 @@ pub fn log_info (value: &str, colored: &Option<bool>) {
 }
 
 #[allow(dead_code)]
-pub fn log_error (value: &str, colored: &Option<bool>) {
+pub fn log_error (value: &str) {
+  let config = Config::inject();
   let mut prefix = create_prefix(ERROR_PREFIX);
 
-  if colored.unwrap_or(true) {
+  if config.colored.unwrap_or(true) {
     prefix = prefix.red().bold().to_string();
   }
 
@@ -40,10 +44,11 @@ pub fn log_error (value: &str, colored: &Option<bool>) {
 }
 
 #[allow(dead_code)]
-pub fn log_success (value: &str, colored: &Option<bool>) {
+pub fn log_success (value: &str) {
+  let config = Config::inject();
   let mut prefix = create_prefix(SUCCESS_PREFIX);
 
-  if colored.unwrap_or(true) {
+  if config.colored.unwrap_or(true) {
     prefix = prefix.green().bold().to_string();
   }
 
@@ -55,10 +60,11 @@ pub fn log_success (value: &str, colored: &Option<bool>) {
 }
 
 #[allow(dead_code)]
-pub fn log_warn (value: &str, colored: &Option<bool>) {
+pub fn log_warn (value: &str) {
+  let config = Config::inject();
   let mut prefix = create_prefix(WARN_PREFIX);
 
-  if colored.unwrap_or(true) {
+  if config.colored.unwrap_or(true) {
     prefix = prefix.yellow().bold().to_string();
   }
 
@@ -82,11 +88,12 @@ pub fn create_prefix (value: &str) -> String {
   format!("[{}]", value)
 }
 
-pub fn print_header (colored: &Option<bool>) {
+pub fn print_header () {
+  let config = Config::inject();
   let mut logo = LOGO.to_string();
   let mut version = env!("CARGO_PKG_VERSION").to_string();
 
-  if colored.unwrap_or(true) {
+  if config.colored.unwrap_or(true) {
     logo = logo.purple().bold().to_string();
     version = format!(" {} ", version).on_purple().white().bold().to_string();
   }

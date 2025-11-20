@@ -1,6 +1,8 @@
 use std::process::Command;
 
-pub fn get_rev_parse (cwd: &Option<String>, rev: &str) -> Option<String> {
+use crate::config::Config;
+
+pub fn get_rev_parse (rev: &str) -> Option<String> {
   let mut rev_parse_command = Command::new("git");
 
   rev_parse_command.args(&[
@@ -8,7 +10,9 @@ pub fn get_rev_parse (cwd: &Option<String>, rev: &str) -> Option<String> {
     rev
   ]);
 
-  if let Some(cwd) = cwd {
+  let config = Config::inject();
+
+  if let Some(cwd) = config.cwd.clone() {
     rev_parse_command.current_dir(cwd);
   }
 

@@ -20,6 +20,8 @@ pub struct Args {
   pub references: Option<Vec<String>>,
   #[arg(long, help = "Exits on false without doing something", help_heading = "General")]
   pub enabled: Option<bool>,
+  #[arg(long, help = "Format SemVer", help_heading = "General")]
+  pub semver_format: Option<String>,
 
   /* gitlab */
   #[arg(long, help = "GitLab enabled", help_heading = "GitLab")]
@@ -51,6 +53,7 @@ impl Into<Config> for &Args {
       colored: self.colored,
       enabled: self.enabled,
       convention: self.convention.clone(),
+      semver_format: self.semver_format.clone(),
       targets: None,
       changelog: None,
       gitlab: Some(WebhookConfig {
