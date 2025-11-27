@@ -2,7 +2,7 @@ use ::std::process;
 
 use clap::Parser;
 
-use crate::{commands::Args, config::{CONFIG, Config, ToExitCode, get_config}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_plain_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, semver::{SemVer}, std::Merge, webhooks::handler::handle_webhooks};
+use crate::{bump::handler::handle_bump, commands::Args, config::{CONFIG, Config, ToExitCode, get_config}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_plain_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, semver::SemVer, std::Merge, webhooks::handler::handle_webhooks};
 
 mod git;
 mod config;
@@ -97,6 +97,8 @@ async fn main() {
   log_info("Tag created");
   push_tag(&resulting_semver);
   log_info("Tag pushed");
+
+  handle_bump(&resulting_semver);
 
   let mut changelog = None;
 

@@ -1,18 +1,16 @@
 use std::{fs};
-use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::semver::SemVer;
 
-#[derive(Serialize, Deserialize)]
-struct Metafile {
-  version: String
-}
-
 pub fn write_semver (path_to_metafile: &str, semver: &SemVer) -> () {
   let metafile_buf = fs::read(path_to_metafile).expect("Couldn't read metafile");
-  let mut metafile = serde_json::from_slice::<Metafile>(&metafile_buf).expect("Couldn't parse metafile");
 
-  metafile.version = semver.try_into().expect("Couldn't convert SemVer to string");
+  println!("{:?}", metafile_buf);
+
+  let mut metafile = serde_json::from_slice::<Value>(&metafile_buf).expect("Couldn't parse metafile");
+
+  metafile["version"] = Value::from(semver.to_string());
 
   fs::write(
     path_to_metafile,

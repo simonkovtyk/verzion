@@ -38,6 +38,10 @@ impl SemVer {
 
     semver_str
   }
+  
+  pub fn as_bytes (&self) -> Vec<u8> {
+    format!("{}\n", self.to_string()).as_bytes().to_vec()
+  }
 }
 
 impl Default for SemVer {
