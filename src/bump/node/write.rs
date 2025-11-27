@@ -5,9 +5,6 @@ use crate::semver::SemVer;
 
 pub fn write_semver (path_to_metafile: &str, semver: &SemVer) -> () {
   let metafile_buf = fs::read(path_to_metafile).expect("Couldn't read metafile");
-
-  println!("{:?}", metafile_buf);
-
   let mut metafile = serde_json::from_slice::<Value>(&metafile_buf).expect("Couldn't parse metafile");
 
   metafile["version"] = Value::from(semver.to_string());

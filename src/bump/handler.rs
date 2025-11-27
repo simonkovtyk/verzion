@@ -20,8 +20,6 @@ pub fn handle_bump (semver: &SemVer) {
 
     let path_str = path.to_str().expect("Contains invalid UTF-8 in path");
 
-    println!("{}", &path_str);
-
     match target.r#type {
       BumpTypes::Plain => {
         plain::write::write_semver(path_str, semver);
