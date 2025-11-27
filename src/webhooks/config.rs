@@ -13,7 +13,7 @@ pub struct WebhookConfig {
 
 impl WebhookConfig {
   pub fn is_enabled (&self) -> bool {
-    self.enabled.unwrap_or(true)
+    self.enabled.unwrap_or(false)
   }
 }
 
