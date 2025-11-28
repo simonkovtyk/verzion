@@ -1,4 +1,6 @@
-use crate::{conventions::conventional::types::{Message, Types}, semver::{SemVerType}};
+use std::process;
+
+use crate::{config::{Config, LogLevel, ToExitCode}, conventions::conventional::types::{Message, Types}, log::log_error, semver::SemVerType};
 
 pub fn get_semver_type (messages: Vec<Message>) -> SemVerType {
   let mut current_semver_type = None;
@@ -36,7 +38,10 @@ pub fn get_semver_type (messages: Vec<Message>) -> SemVerType {
   }
 
   if current_semver_type.is_none() {
-    panic!("No suitable bump trigger found");
+    let config = Config::inject();
+
+    log_error("No suitable bump trigger found", &LogLevel::Error);
+    process::exit(config.to_exit_code());
   }
 
   return current_semver_type.unwrap();

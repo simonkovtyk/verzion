@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
 use reqwest::header::HeaderMap;
+use reqwest_middleware::ClientBuilder;
+use reqwest_retry::RetryTransientMiddleware;
 use url::Url;
 
-use crate::{git::remote::GitRemote, http::get_user_agent, semver::SemVer, webhooks::gitlab::release::get_project_path_from_git_remote};
+use crate::{config::Config, git::remote::GitRemote, http::{get_retry_policy, get_user_agent}, semver::SemVer, webhooks::gitlab::release::get_project_path_from_git_remote};
 
 pub async fn post_create_release (
   remote: &GitRemote,
@@ -11,7 +13,17 @@ pub async fn post_create_release (
   token: &str,
   changelog: &Option<String>
 ) {
-  let client = reqwest::Client::new();
+  let config = Config::inject();
+
+  let client = ClientBuilder::new(reqwest::Client::new())
+    .with(
+      RetryTransientMiddleware::new_with_policy(
+        get_retry_policy(
+          config.gitlab.clone().map(|v| v.retries).flatten()
+        )
+      )
+    ).build();
+
   let mut remote_url = Url::parse(&remote.url).expect("Could not parse remote URL");
   let project_path = get_project_path_from_git_remote(&remote_url);
   
@@ -29,6 +41,7 @@ pub async fn post_create_release (
   );
 
   let mut headers = HeaderMap::new();
+  headers.insert("Content-Type", "application/json".parse().unwrap());
   headers.insert("PRIVATE-TOKEN", token.parse().unwrap());
   headers.insert("User-Agent", get_user_agent().parse().unwrap());
   
@@ -43,11 +56,13 @@ pub async fn post_create_release (
     body.insert("description", inner_changelog.to_string());
   }
 
-  client.post(
+  let response = client.post(
     url
   ).headers(headers)
-    .json(&body)
+    .body(serde_json::to_string(&body).expect("Could not serialize body"))
     .send()
     .await
     .expect("Failed to send request");
+
+  println!("{:?}", response);
 }

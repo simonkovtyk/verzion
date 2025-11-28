@@ -2,43 +2,39 @@ use ::std::process;
 
 use clap::Parser;
 
-use crate::{bump::handler::handle_bump, commands::Args, config::{CONFIG, Config, ToExitCode, get_config}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_plain_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, semver::SemVer, std::Merge, webhooks::handler::handle_webhooks};
+use crate::{commands::Args, config::{CONFIG, Config, LogLevel, ToExitCode}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_str_to_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, metafile::handler::handle_metafile, semver::SemVer, std::{Capitalize, Merge}, webhooks::handler::handle_webhooks};
 
 mod git;
 mod config;
 mod conventions;
 mod semver;
 mod std;
-mod bump;
+mod metafile;
 mod commands;
 mod markdown;
 mod fs;
 mod webhooks;
-mod math;
 mod http;
 mod log;
-mod util;
 
 #[tokio::main]
 async fn main() {
   let args = Args::parse();
-  let mut config = get_config(&args.config);
+
+  let mut config = Config::from_args(&args);
 
   config = <&commands::Args as Into<Config>>::into(&args).as_ref().merge(
     &config
   );
-
-  CONFIG.set(config).expect("Could not update config");
-
+  CONFIG.set(config.clone()).expect("Could not update config");
   drop(args);
 
   print_header();
 
-  log_info("Analyzing tags");
+  log_info("Analyzing tags", &LogLevel::Debug);
   
   let config = Config::inject();
-
-  let tags = get_tags(&(&config).cwd);
+  let tags = get_tags(&config.cwd);
 
   let mut from = None::<String>;
   let mut semver = None::<SemVer>;
@@ -56,7 +52,8 @@ async fn main() {
             "Found latest tag with SemVer {} at {}",
             inner_latest.semver.as_ref().to_string(),
             inner_log.abbr_hash
-          )
+          ),
+          &LogLevel::Info
         );
 
         from = Some(inner_log.hash);
@@ -65,10 +62,10 @@ async fn main() {
     }
   }
 
-  let logs = get_logs(&(&config).cwd, from, None);
+  let logs = get_logs(&config.cwd, from, None);
 
   if logs.is_none() {
-    log_error("No relevant commit found, aborting");
+    log_error("No relevant commit found, aborting", &LogLevel::Error);
     process::exit(config.to_exit_code());
   }
 
@@ -77,9 +74,10 @@ async fn main() {
 
   log_info(
     &format!(
-      "Next version will result in a {} upgrade",
-      &semver_type.to_string().to_lowercase()
-    )
+      "Upgrade: {}",
+      &semver_type.to_string().to_lowercase().capitalize()
+    ),
+    &LogLevel::Info
   );
 
   let current_semver = semver.unwrap_or(SemVer::default());
@@ -88,34 +86,35 @@ async fn main() {
 
   log_info(
     &format!(
-      "Next version is {}",
+      "Version: {}",
       resulting_semver.as_ref().to_string()
-    )
+    ),
+    &LogLevel::Info
   );
 
   create_tag(&resulting_semver);
-  log_info("Tag created");
+  log_info("Tag created", &LogLevel::Info);
   push_tag(&resulting_semver);
-  log_info("Tag pushed");
+  log_info("Tag pushed", &LogLevel::Info);
 
-  handle_bump(&resulting_semver);
+  handle_metafile(&resulting_semver);
 
   let mut changelog = None;
 
-  if (&config).changelog.as_ref().map(|v| v.enabled).flatten().unwrap_or(true) {
-    log_info("Generating changelog");
+  if (&config).changelog.as_ref().map(|v| v.enabled).flatten().unwrap_or(false) {
+    log_info("Generating changelog", &LogLevel::Info);
     changelog = Some(generate_changelog(&logs));
-    log_info("Changelog generated");
+    log_info("Changelog generated", &LogLevel::Info);
 
-    log_info("Writing changelog to file");
+    log_info("Writing changelog to file", &LogLevel::Info);
     if let Some(changelog_path) = (&config).changelog.as_ref().map(|v| v.path.clone()).flatten() {
-      write_plain_file(&changelog_path, &changelog.as_ref().unwrap());
+      write_str_to_file(&changelog_path, &changelog.as_ref().unwrap());
     }
-    log_info("Changelog written to file");
+    log_info("Changelog written to file", &LogLevel::Info);
   }
 
-  log_info("Handle webhooks");
+  log_info("Handle webhooks", &LogLevel::Info);
   handle_webhooks(&config, &resulting_semver, &changelog).await;
-  log_info("Webhooks handled");
-  log_success("Completed process");
+  log_info("Webhooks handled", &LogLevel::Info);
+  log_success("Completed successfully", &LogLevel::Success);
 }

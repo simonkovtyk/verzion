@@ -1,9 +1,9 @@
-use std::{env, fs};
+use std::{env, fs, path::PathBuf, str::FromStr};
 use clap::{ValueEnum};
 use once_cell::sync::{OnceCell};
 use serde::{Deserialize, Serialize};
 
-use crate::{std::Merge, webhooks::config::WebhookConfig};
+use crate::{commands::Args, std::Merge, webhooks::config::WebhookConfig};
 
 pub const CONFIG_FILE_NAME: &str = "verzion.json";
 
@@ -48,6 +48,18 @@ impl Merge for ChangelogConfig {
   }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[serde(rename_all = "lowercase")]
+#[repr(u8)]
+pub enum LogLevel {
+  None = 0,
+  Error = 1,
+  Warn = 2,
+  Info = 3,
+  Success = 4,
+  Debug = 5
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
   /* Accept multiple paths for e.g. monorepos */
@@ -60,6 +72,7 @@ pub struct Config {
   pub targets: Option<Vec<BumpTarget>>,
   pub semver_format: Option<String>,
   pub changelog: Option<ChangelogConfig>,
+  pub log_level: Option<LogLevel>,
   pub gitlab: Option<WebhookConfig>,
   pub github: Option<WebhookConfig>
 }
@@ -67,6 +80,29 @@ pub struct Config {
 impl Config {
   pub fn inject () -> &'static Self {
     CONFIG.get().expect("Could not retrieve config")
+  }
+
+  pub fn from_args (args: &Args) -> Self {
+    let path_buf = args.config.clone()
+      .map(|v|
+        PathBuf::from_str(&v).expect("Could not parse")
+      )
+      .unwrap_or(
+        PathBuf::from_str(&args.cwd.clone()
+          .unwrap_or(
+            env::current_dir().expect("Could not get current directory")
+              .to_str()
+              .expect("Contains invalid UTF-8")
+              .to_string()
+        )
+      ).expect("Could not parse cwd").join(CONFIG_FILE_NAME)
+    );
+
+    println!("{:?}", path_buf.to_str());
+
+    let content_buf = fs::read(path_buf).expect("Couldn't read config file");
+
+    serde_json::from_slice::<Config>(&content_buf).expect("Couldn't parse config file")
   }
 }
 
@@ -92,6 +128,7 @@ impl Merge for Config {
       convention: self.convention.clone().or(other.convention.clone()),
       targets: self.targets.merge(&other.targets),
       changelog: self.changelog.merge(&other.changelog),
+      log_level: self.log_level.clone().or(other.log_level.clone()),
       gitlab: self.gitlab.merge(&other.gitlab),
       github: self.github.merge(&other.github)
     }
@@ -110,6 +147,7 @@ impl Default for Config {
       convention: None,
       targets: None,
       changelog: None,
+      log_level: None,
       gitlab: None,
       github: None
     }
@@ -120,16 +158,4 @@ impl AsRef<Config> for Config {
   fn as_ref(&self) -> &Config {
     &self
   }
-}
-
-pub fn get_config (path: &Option<String>) -> Config {
-  let mut resulting_path = env::current_dir().expect("Couldn't get current directory").join(CONFIG_FILE_NAME).to_str().unwrap().to_string();
-
-  if let Some(path) = path {
-    resulting_path = path.to_string();
-  }
-
-  let content_buf = fs::read(resulting_path).expect("Couldn't read config file");
-
-  return serde_json::from_slice::<Config>(&content_buf).expect("Couldn't parse config file");
 }

@@ -5,11 +5,15 @@ pub async fn handle_webhooks (
   semver: &SemVer,
   changelog: &Option<String>
 ) {
-  if let Some(enabled) = config.github.clone().map(|v| v.is_enabled()) && enabled {
+  if let Some(inner_config) = config.github.clone() && inner_config.is_enabled() {
+    println!("{:?}", inner_config);
     github::release::create_release(semver, config, changelog).await;
   }
 
-  if let Some(enabled) = config.gitlab.clone().map(|v| v.is_enabled()) && enabled {
+  println!("{:?}", config.gitlab.clone());
+
+  if let Some(inner_config) = config.gitlab.clone() && inner_config.is_enabled() {
+    println!("Hit");
     gitlab::release::create_release(semver, config, changelog).await;
   }
 }

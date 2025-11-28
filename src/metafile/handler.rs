@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use crate::{bump::{java, node, plain}, config::{BumpTypes, Config}, semver::SemVer};
+use crate::{metafile::{java, node, plain}, config::{BumpTypes, Config}, semver::SemVer};
 
-pub fn handle_bump (semver: &SemVer) {
+pub fn handle_metafile (semver: &SemVer) {
   let config = Config::inject();
 
   if config.targets.is_none() {

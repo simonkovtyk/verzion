@@ -1,3 +1,23 @@
+pub trait Capitalize {
+  fn capitalize (&self) -> Self;
+}
+
+impl Capitalize for String {
+  fn capitalize (&self) -> Self {
+    let mut chars = self.chars();
+
+    let first = chars.next();
+
+    if first.is_none() {
+      return self.clone();
+    }
+
+    let rest = chars.collect::<String>();
+
+    format!("{}{}", first.unwrap().to_uppercase(), rest)
+  }
+}
+
 pub trait Merge {
   fn merge (&self, other: &Self) -> Self;
 }

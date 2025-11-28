@@ -1,4 +1,6 @@
-use crate::git::log::GitLog;
+use std::process;
+
+use crate::{config::{Config, LogLevel, ToExitCode}, git::log::GitLog, log::log_error};
 
 /*
  * A message is constructed by:
@@ -28,6 +30,7 @@ pub struct Body {
 #[derive(Debug, Clone)]
 pub struct BreakingChange {
   pub detected: bool,
+  #[allow(dead_code)]
   pub message: Option<String>
 }
 
@@ -68,7 +71,10 @@ impl From<&str> for Types {
       "ci" => Self::Ci,
       "revert" => Self::Revert,
       _ => {
-        panic!("Cannot parse message type: {}", value)
+        let config = Config::inject();
+
+        log_error("Cannot parse message type", &LogLevel::Error);
+        process::exit(config.to_exit_code());
       }
     }
   }

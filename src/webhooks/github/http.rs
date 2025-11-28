@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
 use reqwest::header::{HeaderMap};
+use reqwest_middleware::ClientBuilder;
+use reqwest_retry::RetryTransientMiddleware;
 
-use crate::{http::get_user_agent, semver::SemVer, webhooks::github::remote::GitHubRemote};
+use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::SemVer, webhooks::github::remote::GitHubRemote};
 
 pub async fn post_create_release (
   remote: &GitHubRemote,
@@ -10,7 +12,16 @@ pub async fn post_create_release (
   token: &str,
   changelog: &Option<String>
 ) {
-  let client = reqwest::Client::new();
+  let config = Config::inject();
+
+  let client = ClientBuilder::new(reqwest::Client::new())
+    .with(
+      RetryTransientMiddleware::new_with_policy(
+        get_retry_policy(
+          config.github.clone().map(|v| v.retries).flatten()
+        )
+      )
+    ).build();
 
   let url = format!(
     "https://api.github.com/repos/{}/{}/releases",
@@ -35,7 +46,9 @@ pub async fn post_create_release (
   client.post(
     url
   ).headers(headers)
-    .json(&body)
+    .body(
+      serde_json::to_string(&body).expect("Failed to serialize body")
+    )
     .send()
     .await
     .expect("Failed to send request");

@@ -3,7 +3,7 @@ use clap::Parser;
 use crate::{config::{BumpConvetion, Config}, webhooks::config::WebhookConfig};
 
 #[derive(Parser, Debug, Clone)]
-#[command(arg_required_else_help = true, name = "verzion", version, about = "verzion - Commit Analyzer")]
+#[command(arg_required_else_help = false, name = "verzion", version, about = "verzion - Commit Analyzer")]
 pub struct Args {
   /* general */
   #[arg(long, help = "Path to configuration file", help_heading = "General")]
@@ -32,6 +32,8 @@ pub struct Args {
   pub gitlab_token_env: Option<String>,
   #[arg(long, help = "GitLab remote url", help_heading = "GitLab")]
   pub gitlab_url: Option<String>,
+  #[arg(long, help = "GitLab HTTP retries", help_heading = "GitLab")]
+  pub gitlab_retries: Option<u32>,
   
   /* github */
   #[arg(long, help = "GitHub enabled", help_heading = "GitHub")]
@@ -41,7 +43,9 @@ pub struct Args {
   #[arg(long, help = "GitHub token environment variable name", help_heading = "GitHub")]
   pub github_token_env: Option<String>,
   #[arg(long, help = "GitHub remote url", help_heading = "GitHub")]
-  pub github_url: Option<String>
+  pub github_url: Option<String>,
+  #[arg(long, help = "GitHub HTTP retries", help_heading = "GitHub")]
+  pub github_retries: Option<u32>
 }
 
 impl Into<Config> for &Args {
@@ -56,18 +60,21 @@ impl Into<Config> for &Args {
       semver_format: self.semver_format.clone(),
       targets: None,
       changelog: None,
-      gitlab: Some(WebhookConfig {
-        enabled: self.gitlab_enabled,
-        url: self.gitlab_url.clone(),
-        token: self.gitlab_token.clone(),
-        token_env: self.gitlab_token_env.clone()
-      }),
-      github: Some(WebhookConfig {
-        enabled: self.github_enabled,
-        url: self.github_url.clone(),
-        token: self.github_token.clone(),
-        token_env: self.github_token_env.clone()
-      })
+      log_level: None,
+      gitlab: WebhookConfig::new(
+        self.gitlab_enabled,
+        self.gitlab_url.clone(),
+        self.gitlab_token.clone(),
+        self.gitlab_token_env.clone(),
+        self.gitlab_retries.clone()
+      ),
+      github: WebhookConfig::new(
+        self.github_enabled,
+        self.github_url.clone(),
+        self.github_token.clone(),
+        self.github_token_env.clone(),
+        self.github_retries.clone()
+      )
     }
   }
 }

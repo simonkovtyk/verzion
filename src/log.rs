@@ -1,6 +1,6 @@
 use colored::Colorize;
 
-use crate::config::Config;
+use crate::config::{Config, LogLevel};
 
 #[allow(dead_code)]
 const WARN_PREFIX: &str = "WARN";
@@ -12,7 +12,7 @@ const ERROR_PREFIX: &str = "ERROR";
 const SUCCESS_PREFIX: &str = "SUCCESS";
 
 #[allow(dead_code)]
-pub fn log_info (value: &str) {
+pub fn log_info (value: &str, log_level: &LogLevel) {
   let config = Config::inject();
   let mut prefix = create_prefix(INFO_PREFIX);
 
@@ -20,6 +20,12 @@ pub fn log_info (value: &str) {
     prefix = prefix.blue().bold().to_string();
   }
 
+  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
+
+  if log_level > &config_log_level {
+    return;
+  }
+
   println!(
     "{} {}",
     prefix,
@@ -28,7 +34,7 @@ pub fn log_info (value: &str) {
 }
 
 #[allow(dead_code)]
-pub fn log_error (value: &str) {
+pub fn log_error (value: &str, log_level: &LogLevel) {
   let config = Config::inject();
   let mut prefix = create_prefix(ERROR_PREFIX);
 
@@ -36,20 +42,10 @@ pub fn log_error (value: &str) {
     prefix = prefix.red().bold().to_string();
   }
 
-  println!(
-    "{} {}",
-    prefix,
-    value
-  );
-}
+  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
 
-#[allow(dead_code)]
-pub fn log_success (value: &str) {
-  let config = Config::inject();
-  let mut prefix = create_prefix(SUCCESS_PREFIX);
-
-  if config.colored.unwrap_or(true) {
-    prefix = prefix.green().bold().to_string();
+  if log_level > &config_log_level {
+    return;
   }
 
   println!(
@@ -60,12 +56,40 @@ pub fn log_success (value: &str) {
 }
 
 #[allow(dead_code)]
-pub fn log_warn (value: &str) {
+pub fn log_success (value: &str, log_level: &LogLevel) {
+  let config = Config::inject();
+  let mut prefix = create_prefix(SUCCESS_PREFIX);
+
+  if config.colored.unwrap_or(true) {
+    prefix = prefix.green().bold().to_string();
+  }
+
+  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
+
+  if log_level > &config_log_level {
+    return;
+  }
+
+  println!(
+    "{} {}",
+    prefix,
+    value
+  );
+}
+
+#[allow(dead_code)]
+pub fn log_warn (value: &str, log_level: &LogLevel) {
   let config = Config::inject();
   let mut prefix = create_prefix(WARN_PREFIX);
 
   if config.colored.unwrap_or(true) {
     prefix = prefix.yellow().bold().to_string();
+  }
+
+  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
+
+  if log_level > &config_log_level {
+    return;
   }
 
   println!(
