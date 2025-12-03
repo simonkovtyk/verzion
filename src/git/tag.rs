@@ -29,9 +29,18 @@ pub fn get_tags (cwd: &Option<String>) -> Option<Vec<GitTag>> {
   let content = str::from_utf8(&log_output.stdout).expect("Content contained invalid UTF-8");
   let mut tags = Vec::new();
 
+  let config = Config::inject();
+
   for line in content.lines() {
     let annotation = line.to_string();
-    let semver = SemVer::try_from(line);
+    let semver = SemVer::try_from_format(
+      line,
+      &config.semver.as_ref()
+        .map(|v| v.format.clone())
+        .flatten()
+    );
+
+    println!("{:?}", semver);
 
     /* Semver not parsable, skip this tag */
     if semver.is_err() {
@@ -48,14 +57,21 @@ pub fn get_tags (cwd: &Option<String>) -> Option<Vec<GitTag>> {
 }
 
 pub fn create_tag (semver: &SemVer) {
+  let config = Config::inject();
   let mut tag_command = Command::new("git");
+
+  let format_semver = semver.format(
+    &config.semver.as_ref()
+      .map(|v| v.format.clone())
+      .flatten()
+  );
 
   tag_command.args(&[
     "tag",
     "-a",
-    &semver.to_string(),
+    &format_semver,
     "-m",
-    &semver.to_string(),
+    &format_semver
   ]);
   
   let config = Config::inject();

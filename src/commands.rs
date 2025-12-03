@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use crate::{config::{BumpConvetion, Config}, webhooks::config::WebhookConfig};
+use crate::{config::{BumpConvetion, Config, SemVerConfig}, webhooks::config::WebhookConfig};
 
 #[derive(Parser, Debug, Clone)]
 #[command(arg_required_else_help = false, name = "verzion", version, about = "verzion - Commit Analyzer")]
@@ -20,8 +20,24 @@ pub struct Args {
   pub references: Option<Vec<String>>,
   #[arg(long, help = "Exits on false without doing something", help_heading = "General")]
   pub enabled: Option<bool>,
-  #[arg(long, help = "Format SemVer", help_heading = "General")]
+
+  /* semver */
+  #[arg(long, help = "Force SemVer (e.g. 1.2.0)", help_heading = "SemVer")]
+  pub semver: Option<String>,
+  #[arg(long, help = "Format SemVer (e.g. \"v{}\")", help_heading = "SemVer")]
   pub semver_format: Option<String>,
+  #[arg(long, help = "Force SemVer Major", help_heading = "SemVer")]
+  pub semver_major: Option<String>,
+  #[arg(long, help = "Force SemVer Minor", help_heading = "SemVer")]
+  pub semver_minor: Option<String>,
+  #[arg(long, help = "Force SemVer Patch", help_heading = "SemVer")]
+  pub semver_patch: Option<String>,
+  #[arg(long, help = "Force SemVer Pre-Release (e.g. alpha, beta)", help_heading = "SemVer")]
+  pub semver_pre_release: Option<String>,
+  #[arg(long, help = "Force SemVer Iteration", help_heading = "SemVer")]
+  pub semver_iteration: Option<String>,
+  #[arg(long, help = "Force SemVer Metadata", help_heading = "SemVer")]
+  pub semver_metadata: Option<Vec<String>>,
 
   /* gitlab */
   #[arg(long, help = "GitLab enabled", help_heading = "GitLab")]
@@ -57,7 +73,16 @@ impl Into<Config> for &Args {
       colored: self.colored,
       enabled: self.enabled,
       convention: self.convention.clone(),
-      semver_format: self.semver_format.clone(),
+      semver: SemVerConfig::new(
+        self.semver.clone(),
+        self.semver_format.clone(),
+        self.semver_major.clone(),
+        self.semver_minor.clone(),
+        self.semver_patch.clone(),
+        self.semver_pre_release.clone(),
+        self.semver_iteration.clone(),
+        self.semver_metadata.clone()
+      ),
       targets: None,
       changelog: None,
       log_level: None,

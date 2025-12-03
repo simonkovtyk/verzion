@@ -35,12 +35,20 @@ pub async fn post_create_release (
   headers.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
   headers.insert("User-Agent", get_user_agent().parse().unwrap());
 
+  let semver_format = semver.format(
+    &config.semver.as_ref()
+      .map(|v| v.format.clone())
+      .flatten()
+  );
+
+  println!("{}", semver_format);
+
   let mut body = HashMap::new();
-  body.insert("tag_name", semver.to_string());
-  body.insert("name", semver.to_string());
+  body.insert("tag_name", semver_format.as_str());
+  body.insert("name", semver_format.as_str());
 
   if let Some(inner_changelog) = changelog {
-    body.insert("body", inner_changelog.to_string());
+    body.insert("body", inner_changelog.as_str());
   }
 
   client.post(

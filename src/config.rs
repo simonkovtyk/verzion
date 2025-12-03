@@ -61,6 +61,67 @@ pub enum LogLevel {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SemVerConfig {
+  pub semver: Option<String>,
+  pub format: Option<String>,
+  pub major: Option<String>,
+  pub minor: Option<String>,
+  pub patch: Option<String>,
+  pub pre_release: Option<String>,
+  pub iteration: Option<String>,
+  pub metadata: Option<Vec<String>>
+}
+
+impl SemVerConfig {
+  pub fn is_empty (&self) -> bool {
+    self.semver.is_none() && self.format.is_none() && self.major.is_none() && self.minor.is_none() && self.patch.is_none() && self.pre_release.is_none() && self.iteration.is_none() && self.metadata.is_none()
+  }
+
+  pub fn new (
+    semver: Option<String>,
+    format: Option<String>,
+    major: Option<String>,
+    minor: Option<String>,
+    patch: Option<String>,
+    pre_release: Option<String>,
+    iteration: Option<String>,
+    metadata: Option<Vec<String>>
+  ) -> Option<Self> {
+    let instance = Self {
+      semver,
+      format,
+      major,
+      minor,
+      patch,
+      pre_release,
+      iteration,
+      metadata
+    };
+
+    if instance.is_empty() {
+      None
+    } else {
+      Some(instance)
+    }
+  }
+}
+
+impl Merge for SemVerConfig {
+  fn merge(&self, other: &Self) -> Self {
+    Self {
+      semver: self.semver.clone().or(other.semver.clone()),
+      format: self.format.clone().or(other.format.clone()),
+      major: self.major.clone().or(other.major.clone()),
+      minor: self.minor.clone().or(other.minor.clone()),
+      patch: self.patch.clone().or(other.patch.clone()),
+      pre_release: self.pre_release.clone().or(other.pre_release.clone()),
+      iteration: self.iteration.clone().or(other.iteration.clone()),
+      metadata: self.metadata.merge(&other.metadata)
+    }
+  }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
   /* Accept multiple paths for e.g. monorepos */
   pub references: Option<Vec<String>>,
@@ -70,7 +131,7 @@ pub struct Config {
   pub enabled: Option<bool>,
   pub convention: Option<BumpConvetion>,
   pub targets: Option<Vec<BumpTarget>>,
-  pub semver_format: Option<String>,
+  pub semver: Option<SemVerConfig>,
   pub changelog: Option<ChangelogConfig>,
   pub log_level: Option<LogLevel>,
   pub gitlab: Option<WebhookConfig>,
@@ -124,7 +185,7 @@ impl Merge for Config {
       cwd: self.cwd.clone().or(other.cwd.clone()),
       colored: self.colored.or(other.colored.clone()),
       enabled: self.enabled.or(other.enabled.clone()),
-      semver_format: self.semver_format.clone().or(other.semver_format.clone()),
+      semver: self.semver.merge(&other.semver),
       convention: self.convention.clone().or(other.convention.clone()),
       targets: self.targets.merge(&other.targets),
       changelog: self.changelog.merge(&other.changelog),
@@ -143,7 +204,7 @@ impl Default for Config {
       cwd: None,
       colored: None,
       enabled: None,
-      semver_format: None,
+      semver: None,
       convention: None,
       targets: None,
       changelog: None,

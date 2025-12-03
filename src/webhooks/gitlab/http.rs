@@ -47,13 +47,17 @@ pub async fn post_create_release (
   
   let mut body = HashMap::new();
 
-  let semver = semver.to_string();
+  let semver_format = semver.format(
+    &config.semver.as_ref()
+      .map(|v| v.format.clone())
+      .flatten()
+  );
 
-  body.insert("tag_name", semver.to_string());
-  body.insert("name", semver.to_string());
+  body.insert("tag_name", semver_format.as_str());
+  body.insert("name", semver_format.as_str());
 
   if let Some(inner_changelog) = changelog {
-    body.insert("description", inner_changelog.to_string());
+    body.insert("description", inner_changelog.as_str());
   }
 
   let response = client.post(
