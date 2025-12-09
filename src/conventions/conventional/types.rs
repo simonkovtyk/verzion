@@ -56,26 +56,23 @@ pub enum Types {
   Revert
 }
 
-impl From<&str> for Types {
-  fn from(value: &str) -> Self {
-    match value {
-      "feat" => Self::Feat,
-      "fix" => Self::Fix,
-      "chore" => Self::Chore,
-      "docs" => Self::Docs,
-      "style" => Self::Style,
-      "refactor" => Self::Refactor,
-      "perf" => Self::Perf,
-      "test" => Self::Test,
-      "build" => Self::Build,
-      "ci" => Self::Ci,
-      "revert" => Self::Revert,
-      _ => {
-        let config = Config::inject();
+impl TryFrom<&str> for Types {
+  type Error = &'static str;
 
-        log_error("Cannot parse message type", &LogLevel::Error);
-        process::exit(config.to_exit_code());
-      }
+  fn try_from(value: &str) -> Result<Self, Self::Error> {
+    match value {
+      "feat" => Ok(Self::Feat),
+      "fix" => Ok(Self::Fix),
+      "chore" => Ok(Self::Chore),
+      "docs" => Ok(Self::Docs),
+      "style" => Ok(Self::Style),
+      "refactor" => Ok(Self::Refactor),
+      "perf" => Ok(Self::Perf),
+      "test" => Ok(Self::Test),
+      "build" => Ok(Self::Build),
+      "ci" => Ok(Self::Ci),
+      "revert" => Ok(Self::Revert),
+      _ => Err("Unknown type")
     }
   }
 }
