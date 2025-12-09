@@ -58,19 +58,14 @@ pub fn get_log (hash: &str) -> Option<GitLog> {
   ).expect("Failed to deserialize JSON");
 }
 
+const LOG_SEPARATOR: char = '\x1f';
+
 pub fn get_logs (cwd: &Option<String>, from: Option<String>, to: Option<&str>) -> Option<Vec<GitLog>> {
   let mut command = Command::new("git");
-  let pretty_format = "{
-\"message\":\"%s\",
-\"author_name\":\"%an\",
-\"author_email\":\"%ae\",
-\"author_timestamp\":%at,
-\"committer_name\":\"%cn\",
-\"committer_email\":\"%ce\",
-\"committer_timestamp\":%ct,
-\"hash\":\"%H\",
-\"abbr_hash\":\"%h\"
-},";
+  let pretty_format = format!(
+    "%s{sep}%an{sep}%ae{sep}%at{sep}%cn{sep}%ce{sep}%ct{sep}%H{sep}%h",
+    sep = LOG_SEPARATOR
+  );
   let log_command = command
     .args(&[
       "log",
@@ -101,11 +96,23 @@ pub fn get_logs (cwd: &Option<String>, from: Option<String>, to: Option<&str>) -
 
   let content = str::from_utf8(&log_output.stdout).expect("Content contained invalid UTF-8");
 
-  return Some(serde_json::from_str(
-    &format!(
-      "[{}]",
-      &content[..content.len() - 1]
-    )
-  ).expect("Failed to deserialize JSON"));
+
+  let logs = content.lines().map(|line| {
+    let items: Vec<&str> = line.split(LOG_SEPARATOR).collect();
+
+    GitLog {
+      message: items[0].to_string(),
+      author_name: items[1].to_string(),
+      author_email: items[2].to_string(),
+      author_timestamp: items[3].parse().unwrap_or(0),
+      committer_name: items[4].to_string(),
+      committer_email: items[5].to_string(),
+      committer_timestamp: items[6].parse().unwrap_or(0),
+      hash: items[7].to_string(),
+      abbr_hash: items[8].to_string()
+    }
+  }).collect();
+
+  Some(logs)
 }
 
