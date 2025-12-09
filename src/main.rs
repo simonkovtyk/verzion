@@ -34,10 +34,10 @@ async fn main() {
   log_info("Analyzing tags", &LogLevel::Debug);
   
   let config = Config::inject();
-  let tags = get_tags(&config.cwd);
-
-  let mut from = None::<String>;
+  let config_semver = config.semver.clone().map(|v| v.to_semver_with_format());
   let mut semver = None::<SemVer>;
+  let mut from = None::<String>;
+  let tags = get_tags(&config.cwd);
 
   /* If we have tags, get log from latest tag to HEAD */
   if let Some(inner_tags) = tags {
@@ -57,7 +57,10 @@ async fn main() {
         );
 
         from = Some(inner_log.hash);
-        semver = Some(inner_latest.semver);
+
+        if let Some(inner_semver) = &semver && !inner_semver.is_fullfilled() {
+          semver = Some(inner_latest.semver);
+        }
       }
     }
   }
@@ -80,7 +83,11 @@ async fn main() {
     &LogLevel::Info
   );
 
-  let current_semver = semver.unwrap_or(SemVer::default());
+  let mut current_semver = semver.unwrap_or(SemVer::default());
+
+  if let Some(inner_config_semver) = config_semver {
+    current_semver = inner_config_semver.merge(&current_semver);
+  }
 
   let resulting_semver = current_semver.bump(&semver_type);
 
@@ -107,9 +114,11 @@ async fn main() {
     log_info("Changelog generated", &LogLevel::Info);
 
     log_info("Writing changelog to file", &LogLevel::Info);
+
     if let Some(changelog_path) = (&config).changelog.as_ref().map(|v| v.path.clone()).flatten() {
       write_str_to_file(&changelog_path, &changelog.as_ref().unwrap());
     }
+
     log_info("Changelog written to file", &LogLevel::Info);
   }
 

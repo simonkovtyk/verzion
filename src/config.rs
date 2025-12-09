@@ -3,7 +3,7 @@ use clap::{ValueEnum};
 use once_cell::sync::{OnceCell};
 use serde::{Deserialize, Serialize};
 
-use crate::{commands::Args, std::Merge, webhooks::config::WebhookConfig};
+use crate::{commands::Args, semver::SemVer, std::Merge, webhooks::config::WebhookConfig};
 
 pub const CONFIG_FILE_NAME: &str = "verzion.json";
 
@@ -64,27 +64,34 @@ pub enum LogLevel {
 pub struct SemVerConfig {
   pub semver: Option<String>,
   pub format: Option<String>,
-  pub major: Option<String>,
-  pub minor: Option<String>,
-  pub patch: Option<String>,
+  pub major: Option<u64>,
+  pub minor: Option<u64>,
+  pub patch: Option<u64>,
   pub pre_release: Option<String>,
-  pub iteration: Option<String>,
+  pub iteration: Option<u64>,
   pub metadata: Option<Vec<String>>
 }
 
 impl SemVerConfig {
   pub fn is_empty (&self) -> bool {
-    self.semver.is_none() && self.format.is_none() && self.major.is_none() && self.minor.is_none() && self.patch.is_none() && self.pre_release.is_none() && self.iteration.is_none() && self.metadata.is_none()
+    self.semver.is_none()
+      && self.format.is_none()
+      && self.major.is_none()
+      && self.minor.is_none()
+      && self.patch.is_none()
+      && self.pre_release.is_none()
+      && self.iteration.is_none()
+      && self.metadata.is_none()
   }
 
   pub fn new (
     semver: Option<String>,
     format: Option<String>,
-    major: Option<String>,
-    minor: Option<String>,
-    patch: Option<String>,
+    major: Option<u64>,
+    minor: Option<u64>,
+    patch: Option<u64>,
     pre_release: Option<String>,
-    iteration: Option<String>,
+    iteration: Option<u64>,
     metadata: Option<Vec<String>>
   ) -> Option<Self> {
     let instance = Self {
@@ -103,6 +110,42 @@ impl SemVerConfig {
     } else {
       Some(instance)
     }
+  }
+}
+
+impl SemVerConfig {
+  pub fn to_semver (self) -> SemVer {
+    let mut semver = if let Some(inner_semver) = self.semver {
+      SemVer::try_from_str(&inner_semver).expect("Expect valid semver")
+    } else {
+      SemVer::default()
+    };
+
+    semver.major = self.major.or(semver.major);
+    semver.minor = self.minor.or(semver.minor);
+    semver.patch = self.patch.or(semver.patch);
+    semver.pre_release = self.pre_release.or(semver.pre_release);
+    semver.iteration = self.iteration.or(semver.iteration);
+    semver.metadata = self.metadata.or(semver.metadata);
+
+    semver
+  }
+
+  pub fn to_semver_with_format (self) -> SemVer {
+    let mut semver = if let Some(inner_semver) = self.semver {
+      SemVer::try_from_format(&inner_semver, &self.format).expect("Expect valid semver")
+    } else {
+      SemVer::default()
+    };
+
+    semver.major = self.major.or(semver.major);
+    semver.minor = self.minor.or(semver.minor);
+    semver.patch = self.patch.or(semver.patch);
+    semver.pre_release = self.pre_release.or(semver.pre_release);
+    semver.iteration = self.iteration.or(semver.iteration);
+    semver.metadata = self.metadata.or(semver.metadata);
+
+    semver
   }
 }
 
@@ -158,8 +201,6 @@ impl Config {
         )
       ).expect("Could not parse cwd").join(CONFIG_FILE_NAME)
     );
-
-    println!("{:?}", path_buf.to_str());
 
     let content_buf = fs::read(path_buf).expect("Couldn't read config file");
 

@@ -40,8 +40,6 @@ pub fn get_tags (cwd: &Option<String>) -> Option<Vec<GitTag>> {
         .flatten()
     );
 
-    println!("{:?}", semver);
-
     /* Semver not parsable, skip this tag */
     if semver.is_err() {
       continue;

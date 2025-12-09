@@ -60,13 +60,11 @@ pub async fn post_create_release (
     body.insert("description", inner_changelog.as_str());
   }
 
-  let response = client.post(
+  client.post(
     url
   ).headers(headers)
     .body(serde_json::to_string(&body).expect("Could not serialize body"))
     .send()
     .await
     .expect("Failed to send request");
-
-  println!("{:?}", response);
 }

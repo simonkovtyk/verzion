@@ -27,15 +27,15 @@ pub struct Args {
   #[arg(long, help = "Format SemVer (e.g. \"v{}\")", help_heading = "SemVer")]
   pub semver_format: Option<String>,
   #[arg(long, help = "Force SemVer Major", help_heading = "SemVer")]
-  pub semver_major: Option<String>,
+  pub semver_major: Option<u64>,
   #[arg(long, help = "Force SemVer Minor", help_heading = "SemVer")]
-  pub semver_minor: Option<String>,
+  pub semver_minor: Option<u64>,
   #[arg(long, help = "Force SemVer Patch", help_heading = "SemVer")]
-  pub semver_patch: Option<String>,
+  pub semver_patch: Option<u64>,
   #[arg(long, help = "Force SemVer Pre-Release (e.g. alpha, beta)", help_heading = "SemVer")]
   pub semver_pre_release: Option<String>,
   #[arg(long, help = "Force SemVer Iteration", help_heading = "SemVer")]
-  pub semver_iteration: Option<String>,
+  pub semver_iteration: Option<u64>,
   #[arg(long, help = "Force SemVer Metadata", help_heading = "SemVer")]
   pub semver_metadata: Option<Vec<String>>,
 

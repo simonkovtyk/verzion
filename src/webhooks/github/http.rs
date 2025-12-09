@@ -41,8 +41,6 @@ pub async fn post_create_release (
       .flatten()
   );
 
-  println!("{}", semver_format);
-
   let mut body = HashMap::new();
   body.insert("tag_name", semver_format.as_str());
   body.insert("name", semver_format.as_str());

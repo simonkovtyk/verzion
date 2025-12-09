@@ -1,3 +1,5 @@
+use crate::std::Merge;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SemVer {
   pub major: Option<u64>,
@@ -18,6 +20,17 @@ enum SemVerField {
 }
 
 impl SemVer {
+  pub fn is_fullfilled (&self) -> bool {
+    let mut is_fullfilled = self.major.is_some()
+      && self.minor.is_some()
+      && self.patch.is_some();
+
+    if self.iteration.is_some() {
+      is_fullfilled = is_fullfilled && self.pre_release.is_some();
+    }
+
+    is_fullfilled
+  }
   pub fn bump (mut self: Self, r#type: &SemVerType) -> Self {
     match r#type {
       SemVerType::Major => {
@@ -54,7 +67,7 @@ impl SemVer {
     semver_str
   }
 
-  pub fn try_from_raw (value: &str) -> Result<Self, &'static str> {
+  pub fn try_from_str (value: &str) -> Result<Self, &'static str> {
     let mut instance = Self {
       major: None,
       minor: None,
@@ -91,8 +104,13 @@ impl SemVer {
         _ => {
           match field {
             SemVerField::Major => {
-              let value_char_as_digit = value_char.to_digit(10)
-                .expect("Could not parse digit") as u64;
+              let value_char_as_digit = value_char.to_digit(10);
+
+              if value_char_as_digit.is_none() {
+                return Err("Could not parse digit");
+              }
+
+              let value_char_as_digit = value_char_as_digit.unwrap() as u64;
 
               if let Some(major) = instance.major {
                 instance.major = Some(
@@ -102,8 +120,13 @@ impl SemVer {
               }
             },
             SemVerField::Minor => {
-              let value_char_as_digit = value_char.to_digit(10)
-                .expect("Could not parse digit") as u64;
+              let value_char_as_digit = value_char.to_digit(10);
+
+              if value_char_as_digit.is_none() {
+                return Err("Could not parse digit");
+              }
+
+              let value_char_as_digit = value_char_as_digit.unwrap() as u64;
 
               if let Some(minor) = instance.minor {
                 instance.minor = Some(minor * 10 + value_char_as_digit);
@@ -112,8 +135,13 @@ impl SemVer {
               }
             },
             SemVerField::Patch => {
-              let value_char_as_digit = value_char.to_digit(10)
-                .expect("Could not parse digit") as u64;
+              let value_char_as_digit = value_char.to_digit(10);
+
+              if value_char_as_digit.is_none() {
+                return Err("Could not parse digit");
+              }
+
+              let value_char_as_digit = value_char_as_digit.unwrap() as u64;
 
               if let Some(patch) = instance.patch {
                 instance.patch = Some(patch * 10 + value_char_as_digit);
@@ -129,8 +157,13 @@ impl SemVer {
               }
             },
             SemVerField::Iteration => {
-              let value_char_as_digit = value_char.to_digit(10)
-                .expect("Could not parse digit") as u64;
+              let value_char_as_digit = value_char.to_digit(10);
+
+              if value_char_as_digit.is_none() {
+                return Err("Could not parse digit");
+              }
+
+              let value_char_as_digit = value_char_as_digit.unwrap() as u64;
 
               if let Some(iteration) = instance.iteration {
                 instance.iteration = Some(iteration * 10 + value_char_as_digit);
@@ -160,7 +193,7 @@ impl SemVer {
   pub fn try_from_format (value: &str, format: &Option<String>) -> Result<Self, &'static str> {
     let deformat = SemVer::try_deformat(value, format)?;
 
-    SemVer::try_from_raw(deformat.as_str())
+    SemVer::try_from_str(deformat.as_str())
   }
 
   pub fn try_deformat (value: &str, format: &Option<String>) -> Result<String, &'static str> {
@@ -195,6 +228,19 @@ impl SemVer {
   
   pub fn as_bytes (&self) -> Vec<u8> {
     format!("{}\n", self.to_string()).as_bytes().to_vec()
+  }
+}
+
+impl Merge for SemVer {
+  fn merge (&self, other: &Self) -> Self {
+    Self {
+      major: self.major.or(other.major),
+      minor: self.minor.or(other.minor),
+      patch: self.patch.or(other.patch),
+      pre_release: self.pre_release.clone().or(other.pre_release.clone()),
+      iteration: self.iteration.or(other.iteration),
+      metadata: self.metadata.clone().or(other.metadata.clone())
+    }
   }
 }
 
@@ -251,6 +297,10 @@ impl Ord for SemVer {
     self.major.cmp(&other.major)
       .then(self.minor.cmp(&other.minor))
       .then(self.patch.cmp(&other.patch))
+      .then(
+        self.pre_release.is_none().cmp(&other.pre_release.is_none())
+      ).
+      then(self.iteration.cmp(&other.iteration))
   }
 }
 
