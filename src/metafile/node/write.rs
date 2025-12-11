@@ -1,7 +1,7 @@
 use std::{fs};
 use serde_json::Value;
 
-use crate::semver::SemVer;
+use crate::semver::core::SemVer;
 
 pub fn write_semver (path_to_metafile: &str, semver: &SemVer) -> () {
   let metafile_buf = fs::read(path_to_metafile).expect("Couldn't read metafile");

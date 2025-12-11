@@ -1,6 +1,6 @@
 use std::process;
 
-use crate::{config::{Config, LogLevel, ToExitCode}, conventions::conventional::types::{Message, Types}, log::log_error, semver::SemVerType};
+use crate::{config::Config, conventions::conventional::types::{Message, Types}, log::{LogLevel, log_error}, semver::r#type::SemVerType, std::ToExitCode};
 
 pub fn get_semver_type (messages: Vec<Message>) -> SemVerType {
   let mut current_semver_type = None;

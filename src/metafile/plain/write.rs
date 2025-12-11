@@ -1,4 +1,4 @@
-use crate::semver::SemVer;
+use crate::semver::core::SemVer;
 use std::{fs::{OpenOptions}, io::{BufWriter, Write}};
 
 pub fn write_semver (path_to_metafile: &str, semver: &SemVer) -> () {

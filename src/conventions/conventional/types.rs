@@ -1,6 +1,4 @@
-use std::process;
-
-use crate::{config::{Config, LogLevel, ToExitCode}, git::log::GitLog, log::log_error};
+use crate::git::log::GitLog;
 
 /*
  * A message is constructed by:

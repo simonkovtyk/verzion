@@ -4,3 +4,4 @@ pub mod tag;
 pub mod util;
 pub mod remote;
 pub mod push;
+pub mod config;

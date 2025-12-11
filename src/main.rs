@@ -1,8 +1,7 @@
 use ::std::process;
 
-use clap::Parser;
 
-use crate::{commands::Args, config::{CONFIG, Config, LogLevel, ToExitCode}, conventions::handler::{generate_changelog, resolve_semver_type}, fs::write_str_to_file, git::{log::get_logs, push::push_tag, tag::{create_tag, get_log_by_tag, get_tags}, util::find_latest_semver_in_tags}, log::{log_error, log_info, log_success, print_header}, metafile::handler::handle_metafile, semver::SemVer, std::{Capitalize, Merge}, webhooks::handler::handle_webhooks};
+use crate::{config::Config, conventions::handler::resolve_semver_type, fs::write_str_to_file, git::{push::push_tag, tag::create_tag}, log::{LogLevel, log_error, log_info, log_success, print_header}, metafile::handler::handle_metafile, procedures::{config::process_config, git::{analyze_logs, analyze_tags}, semver::get_semver}, remotes::handler::handle_webhooks, semver::core::SemVer, std::{Capitalize, Merge, ToExitCode}};
 
 mod git;
 mod config;
@@ -10,62 +9,28 @@ mod conventions;
 mod semver;
 mod std;
 mod metafile;
-mod commands;
+mod args;
 mod markdown;
 mod fs;
-mod webhooks;
+mod remotes;
 mod http;
 mod log;
+mod changelog;
+mod procedures;
 
 #[tokio::main]
 async fn main() {
-  let args = Args::parse();
-
-  let mut config = Config::from_args(&args);
-
-  config = <&commands::Args as Into<Config>>::into(&args).as_ref().merge(
-    &config
-  );
-  CONFIG.set(config.clone()).expect("Could not update config");
-  drop(args);
-
   print_header();
+  process_config();
+  let analyze_tags_result = analyze_tags();
+  let analyze_logs_result = analyze_logs(analyze_tags_result.map(|v| v.latest_log));
+  let get_semver_result = get_semver(&analyze_logs_result.semver_type, analyze_tags_result.map(|v| v.latest_tag));
 
-  log_info("Analyzing tags", &LogLevel::Debug);
-  
+  handle_metafile(&get_semver_result.semver);
+
   let config = Config::inject();
   let config_semver = config.semver.clone().map(|v| v.to_semver_with_format());
-  let mut semver = None::<SemVer>;
-  let mut from = None::<String>;
-  let tags = get_tags(&config.cwd);
 
-  /* If we have tags, get log from latest tag to HEAD */
-  if let Some(inner_tags) = tags {
-    let latest = find_latest_semver_in_tags(&inner_tags);
-
-    if let Some(inner_latest) = latest {
-      let log = get_log_by_tag(&inner_latest);
-
-      if let Some(inner_log) = log {
-        log_info(
-          &format!(
-            "Found latest tag with SemVer {} at {}",
-            inner_latest.semver.as_ref().to_string(),
-            inner_log.abbr_hash
-          ),
-          &LogLevel::Info
-        );
-
-        from = Some(inner_log.hash);
-
-        if let Some(inner_semver) = &semver && !inner_semver.is_fullfilled() {
-          semver = Some(inner_latest.semver);
-        }
-      }
-    }
-  }
-
-  let logs = get_logs(&config.cwd, from, None);
 
   if logs.is_none() {
     log_error("No relevant commit found, aborting", &LogLevel::Error);
@@ -123,7 +88,7 @@ async fn main() {
   }
 
   log_info("Handle webhooks", &LogLevel::Info);
-  handle_webhooks(&config, &resulting_semver, &changelog).await;
+  handle_webhooks(&resulting_semver, &changelog).await;
   log_info("Webhooks handled", &LogLevel::Info);
   log_success("Completed successfully", &LogLevel::Success);
 }

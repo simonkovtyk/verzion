@@ -1,6 +1,21 @@
+use std::fmt::Debug;
 use colored::Colorize;
+use serde::{Deserialize, Serialize};
+use clap::{ValueEnum};
 
-use crate::config::{Config, LogLevel};
+use crate::config::{Config};
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Eq, Ord, ValueEnum)]
+#[serde(rename_all = "lowercase")]
+#[repr(u8)]
+pub enum LogLevel {
+  None = 0,
+  Error = 1,
+  Warn = 2,
+  Info = 3,
+  Success = 4,
+  Debug = 5
+}
 
 #[allow(dead_code)]
 const WARN_PREFIX: &str = "WARN";
@@ -10,6 +25,28 @@ const INFO_PREFIX: &str = "INFO";
 const ERROR_PREFIX: &str = "ERROR";
 #[allow(dead_code)]
 const SUCCESS_PREFIX: &str = "SUCCESS";
+
+#[allow(dead_code)]
+pub fn log_info_raw <T: Debug> (value: T, log_level: &LogLevel) {
+  let config = Config::inject();
+  let mut prefix = create_prefix(INFO_PREFIX);
+
+  if config.colored.unwrap_or(true) {
+    prefix = prefix.blue().bold().to_string();
+  }
+
+  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
+
+  if log_level > &config_log_level {
+    return;
+  }
+
+  println!(
+    "{} {:#?}",
+    prefix,
+    value
+  );
+}
 
 #[allow(dead_code)]
 pub fn log_info (value: &str, log_level: &LogLevel) {

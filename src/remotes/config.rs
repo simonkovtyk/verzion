@@ -1,10 +1,10 @@
 use std::env;
 use serde::{Deserialize, Serialize};
 
-use crate::{config::Config, std::Merge, webhooks::{github::auth::GITHUB_TOKEN_ENV, gitlab::auth::GITLAB_TOKEN_ENV}};
+use crate::{config::Config, std::Merge, remotes::{github::auth::GITHUB_TOKEN_ENV, gitlab::auth::GITLAB_TOKEN_ENV}};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct WebhookConfig {
+pub struct RemoteConfig {
   pub enabled: Option<bool>,
   pub url: Option<String>,
   pub token: Option<String>,
@@ -12,7 +12,7 @@ pub struct WebhookConfig {
   pub retries: Option<u32>
 }
 
-impl WebhookConfig {
+impl RemoteConfig {
   pub fn is_enabled (&self) -> bool {
     let is_empty = self.is_empty();
 
@@ -50,7 +50,7 @@ impl WebhookConfig {
   }
 }
 
-impl Merge for WebhookConfig {
+impl Merge for RemoteConfig {
   fn merge(&self, other: &Self) -> Self {
     Self {
       enabled: self.enabled.or(other.enabled.clone()),
@@ -62,15 +62,15 @@ impl Merge for WebhookConfig {
   }
 }
 
-pub enum WebhookType {
+pub enum RemoteType {
   GitHub,
   GitLab
 }
 
-pub fn get_token (config: &Config, webhook_type: &WebhookType) -> String {
+pub fn get_token (config: &Config, webhook_type: &RemoteType) -> String {
   let token = match webhook_type {
-    WebhookType::GitHub => config.github.clone().unwrap().token.clone(),
-    WebhookType::GitLab => config.gitlab.clone().unwrap().token.clone(),
+    RemoteType::GitHub => config.github.clone().unwrap().token.clone(),
+    RemoteType::GitLab => config.gitlab.clone().unwrap().token.clone(),
   };
 
   if let Some(inner_token) = token {
@@ -78,8 +78,8 @@ pub fn get_token (config: &Config, webhook_type: &WebhookType) -> String {
   }
 
   let token_env = match webhook_type {
-    WebhookType::GitHub => config.github.clone().unwrap().token_env.clone().unwrap_or(GITHUB_TOKEN_ENV.to_string()),
-    WebhookType::GitLab => config.gitlab.clone().unwrap().token_env.clone().unwrap_or(GITLAB_TOKEN_ENV.to_string())
+    RemoteType::GitHub => config.github.clone().unwrap().token_env.clone().unwrap_or(GITHUB_TOKEN_ENV.to_string()),
+    RemoteType::GitLab => config.gitlab.clone().unwrap().token_env.clone().unwrap_or(GITLAB_TOKEN_ENV.to_string())
   };
 
   let env = env::var(token_env);

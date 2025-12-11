@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use crate::{config::Config, semver::SemVer};
+use crate::{config::Config, semver::core::SemVer};
 
 pub fn push_tag (semver: &SemVer) {
   let mut command = Command::new("git");

@@ -2,12 +2,29 @@ use std::path::Path;
 
 use url::Url;
 
-use crate::git::remote::GitRemote;
+use crate::{config::Config, git::remote::GitRemote, remotes::config::{RemoteType, get_token}};
 
 #[derive(Debug)]
 pub struct GitHubRemote {
+  pub url: Url,
   pub owner: String,
   pub repository: String
+}
+
+impl GitHubRemote {
+  pub fn to_origin (&mut self) -> String {
+    let config = Config::inject();
+    let token = get_token(config, &RemoteType::GitHub);
+
+    if self.url.scheme() != "https" {
+      self.url.set_scheme("https");
+    }
+
+    self.url.set_username("verzion");
+    self.url.set_password(Some(&token));
+
+    self.url.to_string()
+  }
 }
 
 impl TryFrom<GitRemote> for GitHubRemote {
@@ -54,6 +71,7 @@ impl TryFrom<GitRemote> for GitHubRemote {
     }
 
     return Ok(Self {
+      url,
       owner: owner.unwrap(),
       repository: repository.unwrap()
     })

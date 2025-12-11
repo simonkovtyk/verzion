@@ -52,3 +52,21 @@ impl <T: Clone> Merge for Vec<T> {
     data
   }
 }
+
+pub trait ToExitCode {
+  fn to_exit_code(&self) -> i32;
+}
+
+pub trait ToOption {
+  fn to_option (&self) -> Option<Self> where Self: Sized;
+}
+
+impl <T: Clone> ToOption for Vec<T> {
+  fn to_option (&self) -> Option<Self> where Self: Sized {
+    if self.is_empty() {
+      return None
+    }
+
+    Some(self.clone())
+  }
+}

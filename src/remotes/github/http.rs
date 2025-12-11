@@ -4,7 +4,7 @@ use reqwest::header::{HeaderMap};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
-use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::SemVer, webhooks::github::remote::GitHubRemote};
+use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, remotes::github::remote::GitHubRemote};
 
 pub async fn post_create_release (
   remote: &GitHubRemote,

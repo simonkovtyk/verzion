@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::{fs};
 
-use crate::semver::SemVer;
+use crate::semver::core::SemVer;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename = "project")]

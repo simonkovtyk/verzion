@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use crate::{config::Config, git::{log::{GitLog, get_log}, rev_parse::get_rev_parse}, semver::SemVer};
+use crate::{config::Config, git::{log::{GitLog, get_log}, rev_parse::get_rev_parse}, semver::core::SemVer};
 
 #[derive(Debug, Clone)]
 pub struct GitTag {

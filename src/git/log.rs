@@ -1,18 +1,20 @@
 use std::process::Command;
-
 use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GitLogStakeholder {
+  name: String,
+  email: String,
+  timestamp: Option<u64>
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GitLog {
   pub message: String,
-  pub author_timestamp: u64,
-  pub author_name: String,
-  pub author_email: String,
-  pub committer_name: String,
-  pub committer_email: String,
-  pub committer_timestamp: u64,
+  pub author: GitLogStakeholder,
+  pub comitter: GitLogStakeholder,
   pub hash: String,
   pub abbr_hash: String
 }
@@ -102,14 +104,18 @@ pub fn get_logs (cwd: &Option<String>, from: Option<String>, to: Option<&str>) -
 
     GitLog {
       message: items[0].to_string(),
-      author_name: items[1].to_string(),
-      author_email: items[2].to_string(),
-      author_timestamp: items[3].parse().unwrap_or(0),
-      committer_name: items[4].to_string(),
-      committer_email: items[5].to_string(),
-      committer_timestamp: items[6].parse().unwrap_or(0),
       hash: items[7].to_string(),
-      abbr_hash: items[8].to_string()
+      abbr_hash: items[8].to_string(),
+      author: GitLogStakeholder {
+        name: items[1].to_string(),
+        email: items[2].to_string(),
+        timestamp: items[3].parse().ok()
+      },
+      comitter: GitLogStakeholder {
+        name: items[4].to_string(),
+        email: items[5].to_string(),
+        timestamp: items[6].parse().ok()
+      }
     }
   }).collect();
 

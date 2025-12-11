@@ -1,4 +1,4 @@
-use crate::std::Merge;
+use crate::{semver::r#type::SemVerType, std::Merge};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SemVer {
@@ -21,12 +21,12 @@ enum SemVerField {
 
 impl SemVer {
   pub fn is_fullfilled (&self) -> bool {
-    let mut is_fullfilled = self.major.is_some()
+    let is_fullfilled = self.major.is_some()
       && self.minor.is_some()
       && self.patch.is_some();
 
     if self.iteration.is_some() {
-      is_fullfilled = is_fullfilled && self.pre_release.is_some();
+      return is_fullfilled && self.pre_release.is_some();
     }
 
     is_fullfilled
@@ -310,28 +310,3 @@ impl PartialOrd for SemVer {
   }
 }
 
-#[repr(u8)]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SemVerType {
-  Major = 4,
-  Minor = 3,
-  Patch = 2,
-  PreRelease = 1
-}
-
-impl SemVerType {
-  pub fn max_or (self: Self, against: Self) -> Self {
-    std::cmp::max(self, against)
-  }
-}
-
-impl ToString for SemVerType {
-  fn to_string(&self) -> String {
-    match self {
-      Self::Major => "major".to_string(),
-      Self::Minor => "minor".to_string(),
-      Self::Patch => "patch".to_string(),
-      Self::PreRelease => "pre-release".to_string()
-    }
-  }
-}
