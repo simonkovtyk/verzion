@@ -4,12 +4,12 @@ use reqwest::header::{HeaderMap};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
-use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, remotes::github::remote::GitHubRemote};
+use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, webhooks::{config::WebhookItemConfig, github::remote::GitHubRemote}};
 
 pub async fn post_create_release (
+  webhook_item: &WebhookItemConfig,
   remote: &GitHubRemote,
   semver: &SemVer,
-  token: &str,
   changelog: &Option<String>
 ) {
   let config = Config::inject();
@@ -18,7 +18,7 @@ pub async fn post_create_release (
     .with(
       RetryTransientMiddleware::new_with_policy(
         get_retry_policy(
-          config.github.clone().map(|v| v.retries).flatten()
+          webhook_item.http_retries
         )
       )
     ).build();
@@ -31,7 +31,7 @@ pub async fn post_create_release (
   let mut headers = HeaderMap::new();
 
   headers.insert("Accept", "application/vnd.github+json".parse().unwrap());
-  headers.insert("Authorization", format!("Bearer {}", token).parse().unwrap());
+  headers.insert("Authorization", format!("Bearer {}", webhook_item.get_token().expect("Could not get token")).parse().unwrap());
   headers.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
   headers.insert("User-Agent", get_user_agent().parse().unwrap());
 

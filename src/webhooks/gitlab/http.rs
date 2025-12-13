@@ -4,12 +4,12 @@ use reqwest::header::HeaderMap;
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
-use crate::{config::Config, git::remote::GitRemote, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, remotes::gitlab::remote::GitLabRemote};
+use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, webhooks::{config::WebhookItemConfig, gitlab::remote::GitLabRemote}};
 
 pub async fn post_create_release (
-  remote: &GitRemote,
+  webhook_item: &WebhookItemConfig,
+  remote: &GitLabRemote,
   semver: &SemVer,
-  token: &str,
   changelog: &Option<String>
 ) {
   let config = Config::inject();
@@ -18,14 +18,11 @@ pub async fn post_create_release (
     .with(
       RetryTransientMiddleware::new_with_policy(
         get_retry_policy(
-          config.gitlab.clone().map(|v| v.retries).flatten()
+          webhook_item.http_retries
         )
       )
     ).build();
 
-  let remote = GitLabRemote::try_from(remote)
-    .expect("Could not parse git remote as GitLab remote");
- 
   let remote_url = &mut remote.url.clone();
   remote_url.set_path("");
 
@@ -42,7 +39,7 @@ pub async fn post_create_release (
 
   let mut headers = HeaderMap::new();
   headers.insert("Content-Type", "application/json".parse().unwrap());
-  headers.insert("PRIVATE-TOKEN", token.parse().unwrap());
+  headers.insert("PRIVATE-TOKEN", webhook_item.get_token().expect("Could not get token").parse().unwrap());
   headers.insert("User-Agent", get_user_agent().parse().unwrap());
   
   let mut body = HashMap::new();

@@ -1,7 +1,7 @@
 use ::std::process;
 
 
-use crate::{config::Config, conventions::handler::resolve_semver_type, fs::write_str_to_file, git::{push::push_tag, tag::create_tag}, log::{LogLevel, log_error, log_info, log_success, print_header}, metafile::handler::handle_metafile, procedures::{config::process_config, git::{analyze_logs, analyze_tags}, semver::get_semver}, remotes::handler::handle_webhooks, semver::core::SemVer, std::{Capitalize, Merge, ToExitCode}};
+use crate::{config::Config, conventions::handler::resolve_semver_type, fs::write_str_to_file, git::{push::push_tag, tag::create_tag}, log::{LogLevel, log_error, log_info, log_success, print_header}, metafile::handler::handle_metafile, procedures::{config::process_config, git::{analyze_logs, analyze_tags}, semver::get_semver}, semver::core::SemVer, std::{Capitalize, Merge, ToExitCode}};
 
 mod git;
 mod config;
@@ -12,7 +12,7 @@ mod metafile;
 mod args;
 mod markdown;
 mod fs;
-mod remotes;
+mod webhooks;
 mod http;
 mod log;
 mod changelog;

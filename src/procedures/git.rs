@@ -21,7 +21,7 @@ pub fn analyze_tags () -> Option<AnalyzeTagsResult> {
     return None;
   }
 
-  let latest_log = get_log_by_tag(&latest_tag.clone().unwrap());
+  let latest_log = get_log_by_tag(&latest_tag.as_ref().unwrap());
 
   if latest_log.is_none() {
     return None;

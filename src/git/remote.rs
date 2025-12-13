@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use crate::{config::Config, git::config::GitOriginType};
+use crate::{config::Config};
 
 pub struct GitRemote {
   pub name: String,
@@ -12,13 +12,12 @@ pub fn get_remote_url (name: Option<&str>) -> Option<String> {
 
   let mut command = Command::new("git");
 
-  let origin_type = config.git.clone().map(|v| v.origin_type).flatten().unwrap_or(GitOriginType::Push);
   let origin = name.unwrap_or("origin");
 
   command.args(&[
     "remote",
     "get-url",
-    &format!("--{}", origin_type.to_string()),
+    "--push",
     origin
   ]);
 

@@ -2,7 +2,7 @@ use std::path::Path;
 
 use url::Url;
 
-use crate::{config::Config, git::remote::GitRemote, remotes::config::{RemoteType, get_token}};
+use crate::{git::remote::GitRemote};
 
 #[derive(Debug)]
 pub struct GitHubRemote {
@@ -12,26 +12,25 @@ pub struct GitHubRemote {
 }
 
 impl GitHubRemote {
-  pub fn to_origin (&mut self) -> String {
-    let config = Config::inject();
-    let token = get_token(config, &RemoteType::GitHub);
+  pub fn to_origin (&self, token: &Option<String>) -> String {
+    let mut url = self.url.clone();
 
     if self.url.scheme() != "https" {
-      self.url.set_scheme("https");
+      url.set_scheme("https");
     }
 
-    self.url.set_username("verzion");
-    self.url.set_password(Some(&token));
+    url.set_username("verzion");
+    url.set_password(token.as_deref());
 
-    self.url.to_string()
+    url.to_string()
   }
 }
 
-impl TryFrom<GitRemote> for GitHubRemote {
+impl TryFrom<&str> for GitHubRemote {
   type Error = String;
 
-  fn try_from(value: GitRemote) -> Result<Self, Self::Error> {
-    let url = Url::parse(&value.url);
+  fn try_from(value: &str) -> Result<Self, Self::Error> {
+    let url = Url::parse(&value);
 
     if url.is_err() {
       return Err("URL could not be parsed".to_string());

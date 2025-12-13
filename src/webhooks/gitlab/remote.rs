@@ -44,11 +44,11 @@ impl GitLabRemote {
   }
 }
 
-impl TryFrom<&GitRemote> for GitLabRemote {
+impl TryFrom<&str> for GitLabRemote {
   type Error = &'static str;
 
-  fn try_from(value: &GitRemote) -> Result<Self, Self::Error> {
-    let url = Url::parse(&value.url);
+  fn try_from(value: &str) -> Result<Self, Self::Error> {
+    let url = Url::parse(&value);
 
     if url.is_err() {
       return Err("URL could not be parsed");
