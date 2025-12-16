@@ -1,22 +1,17 @@
 use url::Url;
 
-use crate::{config::Config, git::remote::GitRemote, remotes::config::{RemoteType, get_token}};
-
 pub struct GitLabRemote {
   pub url: Url
 }
 
 impl GitLabRemote {
-  pub fn to_origin (&mut self) -> String {
-    let config = Config::inject();
-    let token = get_token(config, &RemoteType::GitLab);
-
+  pub fn to_origin (&mut self, token: &Option<String>) -> String {
     if self.url.scheme() != "http" || self.url.scheme() != "https" {
       self.url.set_scheme("https");
     }
 
     self.url.set_username("verzion");
-    self.url.set_password(Some(&token));
+    self.url.set_password(token.as_deref());
 
     self.url.to_string()
   }
@@ -48,13 +43,7 @@ impl TryFrom<&str> for GitLabRemote {
   type Error = &'static str;
 
   fn try_from(value: &str) -> Result<Self, Self::Error> {
-    let url = Url::parse(&value);
-
-    if url.is_err() {
-      return Err("URL could not be parsed");
-    }
-
-    let url = url.unwrap();
+    let url = Url::parse(&value).map_err(|_| "URL could not be parsed")?;
 
     Ok(GitLabRemote {
       url

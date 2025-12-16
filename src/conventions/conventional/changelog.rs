@@ -1,4 +1,4 @@
-use crate::{changelog::generation::contract::{ChangelogData, ChangelogMessage}, conventions::conventional::types::{Message, Types}, std::ToOption};
+use crate::{changelog::generation::contract::{ChangelogData, ChangelogMessage}, conventions::conventional::types::{Message, Types}, std::option::ToOption};
 
 pub fn get_changelog_data (messages: &Vec<Message>) -> ChangelogData {
   let mut features = Vec::new();

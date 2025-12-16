@@ -1,4 +1,4 @@
-use crate::{semver::r#type::SemVerType, std::Merge};
+use crate::{semver::r#type::SemVerType, std::merge::Merge};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SemVer {
@@ -104,13 +104,7 @@ impl SemVer {
         _ => {
           match field {
             SemVerField::Major => {
-              let value_char_as_digit = value_char.to_digit(10);
-
-              if value_char_as_digit.is_none() {
-                return Err("Could not parse digit");
-              }
-
-              let value_char_as_digit = value_char_as_digit.unwrap() as u64;
+              let value_char_as_digit = value_char.to_digit(10).ok_or("Could not convert value to digit")? as u64;
 
               if let Some(major) = instance.major {
                 instance.major = Some(
@@ -120,13 +114,7 @@ impl SemVer {
               }
             },
             SemVerField::Minor => {
-              let value_char_as_digit = value_char.to_digit(10);
-
-              if value_char_as_digit.is_none() {
-                return Err("Could not parse digit");
-              }
-
-              let value_char_as_digit = value_char_as_digit.unwrap() as u64;
+              let value_char_as_digit = value_char.to_digit(10).ok_or("Could not convert value to digit")? as u64;
 
               if let Some(minor) = instance.minor {
                 instance.minor = Some(minor * 10 + value_char_as_digit);
@@ -135,13 +123,7 @@ impl SemVer {
               }
             },
             SemVerField::Patch => {
-              let value_char_as_digit = value_char.to_digit(10);
-
-              if value_char_as_digit.is_none() {
-                return Err("Could not parse digit");
-              }
-
-              let value_char_as_digit = value_char_as_digit.unwrap() as u64;
+              let value_char_as_digit = value_char.to_digit(10).ok_or("Could not convert value to digit")? as u64;
 
               if let Some(patch) = instance.patch {
                 instance.patch = Some(patch * 10 + value_char_as_digit);
@@ -157,13 +139,7 @@ impl SemVer {
               }
             },
             SemVerField::Iteration => {
-              let value_char_as_digit = value_char.to_digit(10);
-
-              if value_char_as_digit.is_none() {
-                return Err("Could not parse digit");
-              }
-
-              let value_char_as_digit = value_char_as_digit.unwrap() as u64;
+              let value_char_as_digit = value_char.to_digit(10).ok_or("Could not convert value to digit")? as u64;
 
               if let Some(iteration) = instance.iteration {
                 instance.iteration = Some(iteration * 10 + value_char_as_digit);
@@ -197,33 +173,19 @@ impl SemVer {
   }
 
   pub fn try_deformat (value: &str, format: &Option<String>) -> Result<String, &'static str> {
-    if format.is_none() {
-      return Ok(value.to_string());
+    if let Some(inner_format) = format {
+      let open_index = inner_format.find("{").ok_or("Expected opening '{' in semver format")?;
+      let close_index = inner_format.rfind("}").ok_or("Expected closing '}' in semver format")?;
+      let close_index_right = inner_format.len() - 1 - close_index;
+
+      if value.len() - 1 <= close_index_right + open_index {
+        return Err("Expected semver value to match be at least as long as semver format");
+      }
+
+      Ok(value[open_index..(value.len() - close_index_right)].to_string())
+    } else {
+      Ok(value.to_string())
     }
-    
-    let inner_format = format.clone().unwrap();
-
-    let open_index = inner_format.find("{");
-
-    if open_index.is_none() {
-      return Err("Expected opening '{' in semver format");
-    }
-
-    let open_index = open_index.unwrap();
-    let close_index = inner_format.rfind("}");
-
-    if close_index.is_none() {
-      return Err("Expected closing '}' in semver format");
-    }
-
-    let close_index = close_index.unwrap();
-    let close_index_right = inner_format.len() - 1 - close_index;
-
-    if value.len() - 1 <= close_index_right + open_index {
-      return Err("Expected semver value to match be at least as long as semver format");
-    }
-
-    return Ok(value[open_index..(value.len() - close_index_right)].to_string());
   }
   
   pub fn as_bytes (&self) -> Vec<u8> {
@@ -232,14 +194,14 @@ impl SemVer {
 }
 
 impl Merge for SemVer {
-  fn merge (&self, other: &Self) -> Self {
+  fn merge (self, other: Self) -> Self {
     Self {
       major: self.major.or(other.major),
       minor: self.minor.or(other.minor),
       patch: self.patch.or(other.patch),
-      pre_release: self.pre_release.clone().or(other.pre_release.clone()),
+      pre_release: self.pre_release.or(other.pre_release),
       iteration: self.iteration.or(other.iteration),
-      metadata: self.metadata.clone().or(other.metadata.clone())
+      metadata: self.metadata.or(other.metadata)
     }
   }
 }
@@ -266,7 +228,7 @@ impl ToString for &SemVer {
       self.patch.unwrap_or(0)
     );
 
-    if let Some(pre_release) = self.pre_release.clone() {
+    if let Some(pre_release) = self.pre_release.as_ref() {
       value = value
         + &format!("-{}", pre_release);
 

@@ -1,15 +1,23 @@
 use std::path::Path;
 
-use crate::{config::Config, metafile::{config::MetafileTypes, java, node, plain}, semver::core::SemVer};
+use crate::{config::{Config, ToExitCode}, metafile::{config::MetafileTypes, java, node, plain}, semver::core::SemVer, std::{panic::ExpectWithStatusCode}};
 
 pub fn handle_metafile (semver: &SemVer) {
   let config = Config::inject();
 
-  if config.metafiles.is_none() {
-    return;
-  }
+  let targets = config.metafiles.as_ref()
+    .expect_with_status_code(
+      "Expected metafiles",
+      config.to_exit_code()
+    )
+    .targets
+    .as_ref()
+    .expect_with_status_code(
+      "Expected metafile targets",
+      config.to_exit_code()
+    );
 
-  for target in config.metafiles.as_ref().unwrap().targets.unwrap().iter_mut() {
+  for target in targets {
     let mut path = Path::new(&target.path).to_path_buf();
 
     if !path.is_absolute() && let Some(inner_cwd) = &config.cwd {

@@ -1,15 +1,13 @@
-use crate::{config::Config, semver::core::SemVer, webhooks::{config::{WebhookItemConfig, WebhookType}, custom, github, gitlab}};
+use crate::{config::{Config, ToExitCode}, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::{config::{WebhookItemConfig, WebhookType}, custom, github, gitlab}};
 
-pub async fn handle_webhook_item (
+async fn handle_webhook_item (
   webhook_item: &WebhookItemConfig,
   semver: &SemVer,
   changelog: &Option<String>
 ) {
-  if webhook_item.r#type.is_none() {
-    return;
-  }
+  let config = Config::inject();
 
-  match webhook_item.r#type.as_ref().unwrap() {
+  match webhook_item.r#type.as_ref().expect_with_status_code("No type for webhook item provided", config.to_exit_code()) {
     WebhookType::GitLab => {
       gitlab::release::create_release(webhook_item, semver, changelog).await;
     },
@@ -28,14 +26,8 @@ pub async fn handle_webhook (
 ) {
   let config = Config::inject();
 
-  if config.webhook.is_none() {
-    return;
-  }
-
-  for webhook_item in config.webhook.clone().unwrap() {
+  for webhook_item in config.webhooks.clone().expect_with_status_code("No webhook item in webhooks found", config.to_exit_code()) {
     handle_webhook_item(&webhook_item, semver, changelog).await;
   }
 }
 
-pub async fn setup_remotes () {
-}

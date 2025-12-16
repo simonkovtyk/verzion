@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::std::Merge;
+use crate::std::merge::Merge;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -23,9 +23,9 @@ pub struct MetafileConfig {
 }
 
 impl Merge for MetafileConfig {
-  fn merge(&self, other: &Self) -> Self {
+  fn merge(self, other: Self) -> Self {
     Self {
-      targets: self.targets.merge(&other.targets.clone()),
+      targets: self.targets.merge(other.targets),
       push: self.push.or(other.push)
     }
   }

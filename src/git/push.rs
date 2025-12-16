@@ -1,8 +1,11 @@
 use std::process::Command;
 
-use crate::{config::Config, semver::core::SemVer};
+use crate::{semver::core::SemVer, std::command::CommandOptions};
 
-pub fn push_tag (semver: &SemVer) {
+pub fn push_tag (
+  semver: &SemVer,
+  options: CommandOptions
+) -> Result<(), String> {
   let mut command = Command::new("git");
 
   command.args(&[
@@ -11,11 +14,9 @@ pub fn push_tag (semver: &SemVer) {
     &semver.to_string()
   ]);
 
-  let config = Config::inject();
-
-  if let Some(cwd) = config.cwd.clone() {
+  if let Some(cwd) = options.cwd.as_ref() {
     command.current_dir(cwd);
   }
 
-  command.output().expect("Could not execute git push");
+  command.output().map(|_| ()).map_err(|_| "Could not execute git push".to_string())
 }

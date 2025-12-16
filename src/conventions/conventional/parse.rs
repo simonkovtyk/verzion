@@ -67,14 +67,10 @@ pub fn parse_header (raw_header: &str) -> Option<Header> {
     return None;
   }
 
-  let try_type = Types::try_from(r#type.as_str());
-
-  if try_type.is_err() {
-    return None;
-  }
+  let try_type = Types::try_from(r#type.as_str()).ok()?;
 
   return Some(Header {
-    r#type: try_type.unwrap(),
+    r#type: try_type,
     content: content.trim().to_string(),
     scope: if scope.is_empty() { None } else { Some(scope) },
     breaking_change: BreakingChange {

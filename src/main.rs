@@ -1,7 +1,7 @@
 use ::std::process;
 
 
-use crate::{config::Config, conventions::handler::resolve_semver_type, fs::write_str_to_file, git::{push::push_tag, tag::create_tag}, log::{LogLevel, log_error, log_info, log_success, print_header}, metafile::handler::handle_metafile, procedures::{config::process_config, git::{analyze_logs, analyze_tags}, semver::get_semver}, semver::core::SemVer, std::{Capitalize, Merge, ToExitCode}};
+use crate::{config::Config, conventions::handler::resolve_semver_type, fs::write_str_to_file, git::{push::push_tag, tag::create_tag}, log::{LogLevel, log_error, log_info, log_success, print_header}, metafile::handler::handle_metafile, procedures::{changelog::create_changelog, config::process_config, git::{analyze_logs, analyze_tags}, semver::get_semver}, semver::core::SemVer};
 
 mod git;
 mod config;
@@ -27,6 +27,8 @@ async fn main() {
   let get_semver_result = get_semver(&analyze_logs_result.semver_type, analyze_tags_result.map(|v| v.latest_tag));
 
   handle_metafile(&get_semver_result.semver);
+  
+  let create_changelog_result = create_changelog(&analyze_logs_result.logs);
 
   let config = Config::inject();
   let config_semver = config.semver.clone().map(|v| v.to_semver_with_format());

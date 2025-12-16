@@ -10,7 +10,7 @@ pub fn get_semver (
 ) -> GetSemVerResult {
   let config = Config::inject();
 
-  let config_semver = config.semver.clone().map(|v| v.to_semver_with_format());
+  let config_semver = config.semver.clone().map(|v| v.to_semver_with_format()).flatten();
 
   if let Some(inner_config_semver) = config_semver && inner_config_semver.is_fullfilled() {
     return GetSemVerResult {

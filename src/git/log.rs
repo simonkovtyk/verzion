@@ -1,7 +1,7 @@
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 
-use crate::config::Config;
+use crate::{config::Config, std::command::CommandOptions};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GitLogStakeholder {
@@ -19,7 +19,7 @@ pub struct GitLog {
   pub abbr_hash: String
 }
 
-pub fn get_log (hash: &str) -> Option<GitLog> {
+pub fn get_log (hash: &str, options: CommandOptions) -> Result<GitLog, String> {
   let mut command = Command::new("git");
   let pretty_format = "{
 \"message\":\"%s\",
@@ -41,28 +41,30 @@ pub fn get_log (hash: &str) -> Option<GitLog> {
     "--no-patch",
   ]);
 
-  let config = Config::inject();
-
-  if let Some(cwd) = config.cwd.clone() {
+  if let Some(cwd) = options.cwd.as_ref() {
     command.current_dir(cwd);
   }
 
-  let output = command.output().expect("Could not execute git show command");
+  let output = command.output().map_err(|_| "Invoking Git failed")?;
 
   if output.stdout.is_empty() {
-    return None;
+    return Err("No log found for the given hash".to_string());
   }
 
-  let content = str::from_utf8(&output.stdout).expect("Content contained invalid UTF-8");
+  let content = str::from_utf8(&output.stdout).map_err(|_| "Content contained invalid UTF-8")?;
 
   return serde_json::from_str(
     &content
-  ).expect("Failed to deserialize JSON");
+  ).map_err(|_| "Failed to deserialize JSON".to_string());
 }
 
 const LOG_SEPARATOR: char = '\x1f';
 
-pub fn get_logs (cwd: &Option<String>, from: Option<String>, to: Option<&str>) -> Option<Vec<GitLog>> {
+pub fn get_logs (
+  from: Option<String>,
+  to: Option<&str>,
+  options: CommandOptions
+) -> Result<Vec<GitLog>, String> {
   let mut command = Command::new("git");
   let pretty_format = format!(
     "%s{sep}%an{sep}%ae{sep}%at{sep}%cn{sep}%ce{sep}%ct{sep}%H{sep}%h",
@@ -86,18 +88,18 @@ pub fn get_logs (cwd: &Option<String>, from: Option<String>, to: Option<&str>) -
     );
   }
 
-  if let Some(cwd) = cwd {
+  if let Some(cwd) = options.cwd.as_ref() {
     log_command.current_dir(cwd);
   }
 
-  let log_output = log_command.output().expect("Failed to execute git log command");
+  let log_output = log_command.output()
+    .map_err(|_| "Failed to execute git log command")?;
 
   if log_output.stdout.is_empty() {
-    return None;
+    return Err("No logs found".to_string());
   }
 
-  let content = str::from_utf8(&log_output.stdout).expect("Content contained invalid UTF-8");
-
+  let content = str::from_utf8(&log_output.stdout).map_err(|_| "Content contained invalid UTF-8")?;
 
   let logs = content.lines().map(|line| {
     let items: Vec<&str> = line.split(LOG_SEPARATOR).collect();
@@ -119,6 +121,6 @@ pub fn get_logs (cwd: &Option<String>, from: Option<String>, to: Option<&str>) -
     }
   }).collect();
 
-  Some(logs)
+  Ok(logs)
 }
 

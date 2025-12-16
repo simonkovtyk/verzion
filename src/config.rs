@@ -2,7 +2,7 @@ use std::{env, fs, path::PathBuf, str::FromStr};
 use once_cell::sync::{OnceCell};
 use serde::{Deserialize, Serialize};
 
-use crate::{args::Args, changelog::config::ChangelogConfig, conventions::config::ConventionConfig, git::config::GitConfig, log::LogLevel, metafile::config::MetafileConfig, semver::config::SemVerConfig, std::{Merge, ToExitCode}, webhooks::config::WebhookConfig};
+use crate::{args::Args, changelog::config::ChangelogConfig, conventions::config::ConventionConfig, git::config::GitConfig, log::LogLevel, metafile::config::MetafileConfig, semver::config::SemVerConfig, std::merge::Merge, webhooks::config::WebhookConfig};
 
 pub const CONFIG_FILE_NAME: &str = "verzion.json";
 
@@ -22,7 +22,7 @@ pub struct Config {
   pub convention: Option<ConventionConfig>,
   pub changelog: Option<ChangelogConfig>,
   pub git: Option<GitConfig>,
-  pub webhook: Option<WebhookConfig>
+  pub webhooks: Option<WebhookConfig>
 }
 
 impl Config {
@@ -52,6 +52,10 @@ impl Config {
   }
 }
 
+pub trait ToExitCode {
+  fn to_exit_code(&self) -> i32;
+}
+
 impl ToExitCode for &Config {
   fn to_exit_code(&self) -> i32 {
     self.graceful.map(|v| if v {
@@ -63,20 +67,20 @@ impl ToExitCode for &Config {
 }
 
 impl Merge for Config {
-  fn merge(&self, other: &Self) -> Self {
+  fn merge(self, other: Self) -> Self {
     Config {
-      references: self.references.merge(&other.references),
-      graceful: self.graceful.or(other.graceful.clone().or(Some(false))),
-      cwd: self.cwd.clone().or(other.cwd.clone()),
-      colored: self.colored.or(other.colored.clone()),
-      enabled: self.enabled.or(other.enabled.clone()),
-      semver: self.semver.merge(&other.semver),
-      convention: self.convention.clone().or(other.convention.clone()),
-      metafiles: self.metafiles.merge(&other.metafiles),
-      changelog: self.changelog.merge(&other.changelog),
-      log_level: self.log_level.clone().or(other.log_level.clone()),
-      git: self.git.merge(&other.git),
-      webhook: self.webhook.merge(&other.webhook),
+      references: self.references.merge(other.references),
+      graceful: self.graceful.or(other.graceful.or(Some(false))),
+      cwd: self.cwd.or(other.cwd),
+      colored: self.colored.or(other.colored),
+      enabled: self.enabled.or(other.enabled),
+      semver: self.semver.merge(other.semver),
+      convention: self.convention.or(other.convention),
+      metafiles: self.metafiles.merge(other.metafiles),
+      changelog: self.changelog.merge(other.changelog),
+      log_level: self.log_level.or(other.log_level),
+      git: self.git.merge(other.git),
+      webhooks: self.webhooks.merge(other.webhooks),
     }
   }
 }
@@ -95,8 +99,7 @@ impl Default for Config {
       changelog: None,
       log_level: None,
       git: None,
-      gitlab: None,
-      github: None
+      webhooks: None
     }
   }
 }

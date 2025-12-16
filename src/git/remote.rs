@@ -1,15 +1,16 @@
-use std::process::Command;
+use std::{result::Result, process::Command};
 
-use crate::{config::Config};
+use crate::std::command::CommandOptions;
 
 pub struct GitRemote {
   pub name: String,
   pub url: String
 }
 
-pub fn get_remote_url (name: Option<&str>) -> Option<String> {
-  let config = Config::inject();
-
+pub fn get_remote_url (
+  name: Option<&str>,
+  options: CommandOptions
+) -> Result<String, String> {
   let mut command = Command::new("git");
 
   let origin = name.unwrap_or("origin");
@@ -22,22 +23,20 @@ pub fn get_remote_url (name: Option<&str>) -> Option<String> {
   ]);
 
 
-  if let Some(cwd) = config.cwd.clone() {
+  if let Some(cwd) = options.cwd.as_ref() {
     command.current_dir(cwd);
   }
 
-  let output = command.output().expect("Could not execute git show command");
+  let output = command.output().map_err(|_| "Could not execute git show command".to_string())?;
 
   if output.stdout.is_empty() {
-    return None;
+    return Err("No remote URL found".to_string());
   }
 
-  let content = String::from_utf8(output.stdout).expect("Content contained invalid UTF-8");
-
-  Some(content)
+  String::from_utf8(output.stdout).map_err(|_| "Content contained invalid UTF-8".to_string())
 }
 
-pub fn get_remote_names () -> Option<Vec<String>> {
+pub fn get_remote_names (options: CommandOptions) -> Result<Vec<String>, String> {
   let mut command = Command::new("git");
 
   command.args(&[
@@ -45,28 +44,26 @@ pub fn get_remote_names () -> Option<Vec<String>> {
     "show"
   ]);
 
-  let config = Config::inject();
-
-  if let Some(cwd) = config.cwd.clone() {
+  if let Some(cwd) = options.cwd.as_ref() {
     command.current_dir(cwd);
   }
 
-  let output = command.output().expect("Could not execute git show command");
+  let output = command.output().map_err(|_| "Could not execute git show command".to_string())?;
 
   if output.stdout.is_empty() {
-    return None;
+    return Err("No remote names found".to_string());
   }
 
-  let content = String::from_utf8(output.stdout).expect("Content contained invalid UTF-8");
+  let content = String::from_utf8(output.stdout).map_err(|_| "Content contained invalid UTF-8".to_string())?;
   let names: Vec<String> = content
     .lines()
     .map(|line| line.trim().to_string())
     .collect();
 
-  Some(names)
+  Ok(names)
 }
 
-pub fn set_remote (remote: &GitRemote) {
+pub fn set_remote (remote: &GitRemote, options: CommandOptions) -> Result<(), String> {
   let mut command = Command::new("git");
 
   command.args(&[
@@ -76,11 +73,9 @@ pub fn set_remote (remote: &GitRemote) {
     &remote.url
   ]);
 
-  let config = Config::inject();
-
-  if let Some(cwd) = config.cwd.clone() {
+  if let Some(cwd) = options.cwd.as_ref() {
     command.current_dir(cwd);
   }
 
-  command.output().expect("Could not execute git show command");
+  command.output().map(|_| ()).map_err(|_| "Could not execute git show command".to_string())
 }

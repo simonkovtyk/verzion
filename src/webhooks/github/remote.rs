@@ -2,8 +2,6 @@ use std::path::Path;
 
 use url::Url;
 
-use crate::{git::remote::GitRemote};
-
 #[derive(Debug)]
 pub struct GitHubRemote {
   pub url: Url,
@@ -65,14 +63,10 @@ impl TryFrom<&str> for GitHubRemote {
       }
     }
 
-    if owner.is_none() || repository.is_none() {
-      return Err("Owner or repository not found in URL".to_string());
-    }
-
-    return Ok(Self {
+    Ok(Self {
       url,
-      owner: owner.unwrap(),
-      repository: repository.unwrap()
+      owner: owner.ok_or("Owner not found")?,
+      repository: repository.ok_or("Repository not found")?
     })
   }
 }

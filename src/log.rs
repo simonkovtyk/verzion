@@ -85,7 +85,7 @@ pub fn log_error (value: &str, log_level: &LogLevel) {
     return;
   }
 
-  println!(
+  eprintln!(
     "{} {}",
     prefix,
     value
@@ -129,7 +129,7 @@ pub fn log_warn (value: &str, log_level: &LogLevel) {
     return;
   }
 
-  println!(
+  eprintln!(
     "{} {}",
     prefix,
     value

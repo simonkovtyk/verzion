@@ -56,6 +56,5 @@ pub async fn post_create_release (
       serde_json::to_string(&body).expect("Failed to serialize body")
     )
     .send()
-    .await
-    .expect("Failed to send request");
+    .await;
 }

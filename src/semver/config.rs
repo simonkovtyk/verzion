@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{semver::core::SemVer, std::Merge};
+use crate::{semver::core::SemVer, std::merge::Merge};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SemVerConfig {
@@ -56,9 +56,9 @@ impl SemVerConfig {
 }
 
 impl SemVerConfig {
-  pub fn to_semver (self) -> SemVer {
+  pub fn to_semver (self) -> Option<SemVer> {
     let mut semver = if let Some(inner_semver) = self.semver {
-      SemVer::try_from_str(&inner_semver).expect("Expect valid semver")
+      SemVer::try_from_str(&inner_semver).ok()?
     } else {
       SemVer::default()
     };
@@ -70,12 +70,12 @@ impl SemVerConfig {
     semver.iteration = self.iteration.or(semver.iteration);
     semver.metadata = self.metadata.or(semver.metadata);
 
-    semver
+    Some(semver)
   }
 
-  pub fn to_semver_with_format (self) -> SemVer {
-    let mut semver = if let Some(inner_semver) = self.semver {
-      SemVer::try_from_format(&inner_semver, &self.format).expect("Expect valid semver")
+  pub fn to_semver_with_format (self) -> Option<SemVer> {
+    let mut semver = if let Some(inner_semver) = self.semver.as_ref() {
+      SemVer::try_from_format(&inner_semver, &self.format).ok()?
     } else {
       SemVer::default()
     };
@@ -87,21 +87,21 @@ impl SemVerConfig {
     semver.iteration = self.iteration.or(semver.iteration);
     semver.metadata = self.metadata.or(semver.metadata);
 
-    semver
+    Some(semver)
   }
 }
 
 impl Merge for SemVerConfig {
-  fn merge(&self, other: &Self) -> Self {
+  fn merge(self, other: Self) -> Self {
     Self {
-      semver: self.semver.clone().or(other.semver.clone()),
-      format: self.format.clone().or(other.format.clone()),
-      major: self.major.clone().or(other.major.clone()),
-      minor: self.minor.clone().or(other.minor.clone()),
-      patch: self.patch.clone().or(other.patch.clone()),
-      pre_release: self.pre_release.clone().or(other.pre_release.clone()),
-      iteration: self.iteration.clone().or(other.iteration.clone()),
-      metadata: self.metadata.merge(&other.metadata)
+      semver: self.semver.or(other.semver),
+      format: self.format.or(other.format),
+      major: self.major.or(other.major),
+      minor: self.minor.or(other.minor),
+      patch: self.patch.or(other.patch),
+      pre_release: self.pre_release.or(other.pre_release),
+      iteration: self.iteration.or(other.iteration),
+      metadata: self.metadata.merge(other.metadata)
     }
   }
 }

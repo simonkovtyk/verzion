@@ -1,8 +1,8 @@
 use std::process::Command;
 
-use crate::config::Config;
+use crate::std::command::CommandOptions;
 
-pub fn get_rev_parse (rev: &str) -> Option<String> {
+pub fn get_rev_parse (rev: &str, options: CommandOptions) -> Result<String, String> {
   let mut rev_parse_command = Command::new("git");
 
   rev_parse_command.args(&[
@@ -10,17 +10,15 @@ pub fn get_rev_parse (rev: &str) -> Option<String> {
     rev
   ]);
 
-  let config = Config::inject();
-
-  if let Some(cwd) = config.cwd.clone() {
+  if let Some(cwd) = options.cwd.as_ref() {
     rev_parse_command.current_dir(cwd);
   }
 
-  let output = rev_parse_command.output().expect("Could not execute git rev-parse command");
+  let output = rev_parse_command.output().map_err(|_| "Could not execute git rev-parse command")?;
 
   if output.stdout.is_empty() {
-    return None;
+    return Err("No output from git rev-parse".to_string());
   }
 
-  String::from_utf8(output.stdout).ok()
+  String::from_utf8(output.stdout).map_err(|_| "Output contained invalid UTF-8".to_string())
 }

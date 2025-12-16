@@ -1,14 +1,13 @@
 use std::process::Command;
 
-use crate::{config::Config, git::{log::{GitLog, get_log}, rev_parse::get_rev_parse}, semver::core::SemVer};
+use crate::{git::{log::{GitLog, get_log}, rev_parse::get_rev_parse}, std::command::CommandOptions};
 
 #[derive(Debug, Clone)]
 pub struct GitTag {
-  pub annotation: String,
-  pub semver: SemVer
+  pub content: String
 }
 
-pub fn get_tags (cwd: &Option<String>) -> Option<Vec<GitTag>> {
+pub fn get_tags (options: CommandOptions) -> Result<Vec<GitTag>, String> {
   let mut tag_command = Command::new("git");
 
   tag_command.args(&[
@@ -16,77 +15,48 @@ pub fn get_tags (cwd: &Option<String>) -> Option<Vec<GitTag>> {
     "-l"
   ]);
 
-  if let Some(cwd) = cwd {
+  if let Some(cwd) = options.cwd {
     tag_command.current_dir(cwd);
   }
 
-  let log_output = tag_command.output().expect("Failed to execute git log command");
+  let log_output = tag_command.output().map_err(|_| "Failed to execute git log command")?;
 
   if log_output.stdout.is_empty() {
-    return None;
+    return Err("No tags found".to_string());
   }
 
-  let content = str::from_utf8(&log_output.stdout).expect("Content contained invalid UTF-8");
+  let content = str::from_utf8(&log_output.stdout).map_err(|_| "Content contained invalid UTF-8".to_string())?;
   let mut tags = Vec::new();
 
-  let config = Config::inject();
-
   for line in content.lines() {
-    let annotation = line.to_string();
-    let semver = SemVer::try_from_format(
-      line,
-      &config.semver.as_ref()
-        .map(|v| v.format.clone())
-        .flatten()
-    );
-
-    /* Semver not parsable, skip this tag */
-    if semver.is_err() {
-      continue;
-    }
-
     tags.push(GitTag {
-      annotation,
-      semver: semver.unwrap()
+      content: line.to_string()
     });
   }
 
-  Some(tags)
+  Ok(tags)
 }
 
-pub fn create_tag (semver: &SemVer) {
-  let config = Config::inject();
+pub fn create_tag (value: &str, options: CommandOptions) -> Result<(), String> {
   let mut tag_command = Command::new("git");
-
-  let format_semver = semver.format(
-    &config.semver.as_ref()
-      .map(|v| v.format.clone())
-      .flatten()
-  );
 
   tag_command.args(&[
     "tag",
     "-a",
-    &format_semver,
+    value,
     "-m",
-    &format_semver
+    value
   ]);
   
-  let config = Config::inject();
-
-  if let Some(cwd) = config.cwd.clone() {
+  if let Some(cwd) = options.cwd.as_ref() {
     tag_command.current_dir(cwd);
   }
 
-  tag_command.output().expect("Could not execute git tag command");
+  tag_command.output().map(|_| ()).map_err(|_| "Could not execute git tag command".to_string())
 }
 
-pub fn get_log_by_tag (tag: &GitTag) -> Option<GitLog> {
-  let hash = get_rev_parse(&tag.annotation);
+pub fn get_log_by_tag (tag: &GitTag, options: CommandOptions) -> Result<GitLog, String> {
+  let hash = get_rev_parse(&tag.content, options.clone())?;
 
-  if hash.is_none() {
-    return None;
-  }
-
-  return get_log(&hash.unwrap());
+  get_log(&hash, options)
 }

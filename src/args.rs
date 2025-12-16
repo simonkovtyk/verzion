@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use crate::{config::Config, conventions::config::ConvetionTypes, git::config::{GitConfig, GitOriginType}, log::LogLevel, remotes::config::RemoteConfig, semver::config::SemVerConfig};
+use crate::{config::Config, conventions::config::ConvetionTypes, git::config::{GitConfig}, log::LogLevel, semver::config::SemVerConfig};
 
 #[derive(Parser, Debug, Clone)]
 #[command(arg_required_else_help = false, name = "verzion", version, about = "verzion - Commit Analyzer")]
@@ -54,32 +54,6 @@ pub struct Args {
   /* git */
   #[arg(long, help = "Handle all git origins", help_heading = "Git")]
   pub git_all_origins: Option<bool>,
-  #[arg(long, help = "Origin types to handle", help_heading = "Git")]
-  pub git_origin_type: Option<GitOriginType>,
-
-  /* gitlab */
-  #[arg(long, help = "GitLab enabled", help_heading = "GitLab")]
-  pub gitlab_enabled: Option<bool>,
-  #[arg(long, help = "GitLab token", help_heading = "GitLab")]
-  pub gitlab_token: Option<String>,
-  #[arg(long, help = "GitLab token environment variable name", help_heading = "GitLab")]
-  pub gitlab_token_env: Option<String>,
-  #[arg(long, help = "GitLab remote url", help_heading = "GitLab")]
-  pub gitlab_url: Option<String>,
-  #[arg(long, help = "GitLab HTTP retries", help_heading = "GitLab")]
-  pub gitlab_retries: Option<u32>,
-  
-  /* github */
-  #[arg(long, help = "GitHub enabled", help_heading = "GitHub")]
-  pub github_enabled: Option<bool>,
-  #[arg(long, help = "GitHub token", help_heading = "GitHub")]
-  pub github_token: Option<String>,
-  #[arg(long, help = "GitHub token environment variable name", help_heading = "GitHub")]
-  pub github_token_env: Option<String>,
-  #[arg(long, help = "GitHub remote url", help_heading = "GitHub")]
-  pub github_url: Option<String>,
-  #[arg(long, help = "GitHub HTTP retries", help_heading = "GitHub")]
-  pub github_retries: Option<u32>
 }
 
 impl Into<Config> for &Args {
@@ -106,22 +80,9 @@ impl Into<Config> for &Args {
       log_level: self.log_level.clone(),
       git: GitConfig::new(
         self.git_all_origins,
-        self.git_origin_type.clone()
+        None
       ),
-      gitlab: RemoteConfig::new(
-        self.gitlab_enabled,
-        self.gitlab_url.clone(),
-        self.gitlab_token.clone(),
-        self.gitlab_token_env.clone(),
-        self.gitlab_retries.clone()
-      ),
-      github: RemoteConfig::new(
-        self.github_enabled,
-        self.github_url.clone(),
-        self.github_token.clone(),
-        self.github_token_env.clone(),
-        self.github_retries.clone()
-      )
+      webhooks: None
     }
   }
 }
