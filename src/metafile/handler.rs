@@ -1,27 +1,19 @@
 use std::path::Path;
 
-use crate::{config::Config, git::result::GitRulesetResult, metafile::{config::MetafileTypes, java, node, plain}, semver::core::SemVer};
+use crate::{config::Config, git::{tracking::GitTrackingBatch}, metafile::{config::MetafileTypes, git::get_commit_msg, java, node, plain}, semver::core::SemVer};
 
 pub struct HandleMetafilesResult {
-  pub git_ruleset: GitRulesetResult
+  pub tracking_batch: Option<GitTrackingBatch>
 }
 
-impl Default for HandleMetafilesResult {
-  fn default() -> Self {
-    Self {
-      git_ruleset: GitRulesetResult::default()
-    }
-  }
-}
-
-pub fn handle_metafile (semver: &SemVer) -> HandleMetafilesResult {
+pub fn handle_metafile (semver: &SemVer) -> Option<HandleMetafilesResult> {
   let config = Config::inject();
 
-  let mut result = HandleMetafilesResult::default();
+  let mut tracking_batch = Vec::new();
 
-  if let Some(inner_targets) = config.metafiles.as_ref() {
-    for target in inner_targets {
-      let mut path = Path::new(&target.path).to_path_buf();
+  if let Some(inner_metafiles) = config.metafiles.as_ref() {
+    for metafile in inner_metafiles {
+      let mut path = Path::new(&metafile.path).to_path_buf();
 
       if !path.is_absolute() && let Some(inner_cwd) = &config.cwd {
         let cwd_path = Path::new(&inner_cwd);
@@ -31,7 +23,7 @@ pub fn handle_metafile (semver: &SemVer) -> HandleMetafilesResult {
 
       let path_str = path.to_str().expect("Contains invalid UTF-8 in path");
 
-      match target.r#type {
+      match metafile.r#type {
         MetafileTypes::Plain => {
           plain::write::write_semver(path_str, semver);
         },
@@ -43,12 +35,22 @@ pub fn handle_metafile (semver: &SemVer) -> HandleMetafilesResult {
         }
       }
 
-      result.git_ruleset.needs_push = match target.git_ruleset.push {
-        Some(true) => true,
-        _ => result.git_ruleset.needs_push
-      };
+      let tracking_path = metafile.tracking
+        .as_ref()
+        .map(|v| v.track(path_str, &get_commit_msg()))
+        .flatten();
+
+      if let Some(inner_tracking_path) = tracking_path {
+        tracking_batch.push(inner_tracking_path);
+      }
     }
   }
 
-  return result;
+  return Some(HandleMetafilesResult {
+    tracking_batch: if tracking_batch.is_empty() {
+      None
+    } else {
+      Some(tracking_batch)
+    }
+  });
 }

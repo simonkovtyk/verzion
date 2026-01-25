@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use crate::{config::Config, conventions::config::ConvetionTypes, log::LogLevel, semver::config::SemVerConfig};
+use crate::{config::Config, conventions::config::ConvetionTypes, git::tracking::{GitTracking, GitTrackingStrategy}, log::LogLevel, semver::config::SemVerConfig};
 
 #[derive(Parser, Debug, Clone)]
 #[command(
@@ -56,33 +56,42 @@ pub struct Args {
   #[arg(long, help = "Force SemVer Metadata", help_heading = "SemVer")]
   pub semver_metadata: Option<Vec<String>>,
 
-  /* git */
-  #[arg(long, help = "Handle all git origins", help_heading = "Git")]
-  pub git_all_origins: Option<bool>,
+  /* git tracking */
+  #[arg(long, help = "Track all dynamic files", help_heading = "Tracking")]
+  pub tracking_enabled: Option<bool>,
+  #[arg(long, help = "Strategy for tracking each dynamic file", help_heading = "Tracking")]
+  pub tracking_strategy: Option<GitTrackingStrategy>,
+  #[arg(long, help = "Custom message used while tracking", help_heading = "Tracking")]
+  pub tracking_message: Option<String>
 }
 
-impl Into<Config> for &Args {
+impl Into<Config> for Args {
   fn into(self) -> Config {
     Config {
       graceful: self.graceful,
-      cwd: self.cwd.clone(),
-      references: self.references.clone(),
+      cwd: self.cwd,
+      references: self.references,
       colored: self.colored,
       enabled: self.enabled,
-      convention: self.convention.clone(),
+      convention: self.convention,
+      log_level: self.log_level,
       semver: SemVerConfig::new(
-        self.semver.clone(),
-        self.semver_format.clone(),
-        self.semver_major.clone(),
-        self.semver_minor.clone(),
-        self.semver_patch.clone(),
-        self.semver_pre_release.clone(),
-        self.semver_iteration.clone(),
-        self.semver_metadata.clone()
+        self.semver,
+        self.semver_format,
+        self.semver_major,
+        self.semver_minor,
+        self.semver_patch,
+        self.semver_pre_release,
+        self.semver_iteration,
+        self.semver_metadata
+      ),
+      tracking: GitTracking::new(
+        self.tracking_enabled,
+        self.tracking_strategy,
+        self.tracking_message
       ),
       metafiles: None,
       changelog: None,
-      log_level: self.log_level.clone(),
       webhooks: None
     }
   }

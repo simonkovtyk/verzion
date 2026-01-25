@@ -1,8 +1,8 @@
-use crate::{changelog::handler::generate_changelog, config::Config, fs::write_str_to_file, git::{add::add, commit::commit, config::GitRulesetResult, log::GitLog}, std::command::CommandOptions};
+use crate::{changelog::{git::get_commit_msg, handler::generate_changelog}, config::Config, fs::write_str_to_file, git::{log::GitLog}};
 
 pub struct CreateChangelogResult {
   pub changelog: String,
-  pub git_ruleset_result: Option<GitRulesetResult>
+  pub tracking_batch: Option<String>
 }
 
 pub fn create_changelog (
@@ -21,26 +21,19 @@ pub fn create_changelog (
   if let Some(changelog_path) = changelog_config.path {
     write_str_to_file(&changelog_path, changelog.as_str());
 
-    if let Some(git_ruleset) = changelog_config.git_ruleset {
-      if git_ruleset.commit.unwrap_or(false) {
-        add(&changelog_path, CommandOptions {
-          cwd: config.cwd.clone()
-        }).ok()?;
+    let tracking_batch = changelog_config.tracking
+      .as_ref()
+      .map(|v| v.track(&changelog_path, &get_commit_msg()))
+      .flatten();
 
-        commit(git_ruleset.commit_msg, command_options)
-      }
-
-      return Some(CreateChangelogResult {
-        changelog,
-        git_ruleset_result: Some(GitRulesetResult::from_ruleset(&git_ruleset, vec![changelog_path]))
-      });
-    }
+    return Some(CreateChangelogResult {
+      changelog,
+      tracking_batch
+    });
   }
 
-  Some(
-    CreateChangelogResult {
-      changelog,
-      git_ruleset_result: None 
-    }
-  )
+  Some(CreateChangelogResult {
+    changelog,
+    tracking_batch: None
+  })
 }

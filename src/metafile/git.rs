@@ -3,8 +3,8 @@ use crate::{config::Config, conventions::{config::{ConvetionTypes, DEFAULT_CONVE
 pub fn get_conventional_commit_msg () -> String {
   let conventional_header = ConventionalHeader::new(
     Some(Types::Chore),
-    Some("changelog".to_string()),
-    Some("update changelog".to_string()),
+    Some("metafile".to_string()),
+    Some("update semver".to_string()),
     Some(false)
   );
 

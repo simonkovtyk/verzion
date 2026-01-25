@@ -6,7 +6,7 @@ pub fn process_config () {
 
   let mut config = Config::from_args(&args);
 
-  config = <&args::Args as Into<Config>>::into(&args).merge(
+  config = <args::Args as Into<Config>>::into(args).merge(
     config
   );
 

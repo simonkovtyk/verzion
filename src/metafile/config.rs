@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{git::config::GitRuleset};
+use crate::git::tracking::GitTracking;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -11,8 +11,8 @@ pub enum MetafileTypes {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct MetafileTarget {
+pub struct Metafile {
   pub r#type: MetafileTypes,
   pub path: String,
-  pub git_ruleset: GitRuleset
+  pub tracking: Option<GitTracking>
 }

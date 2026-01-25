@@ -3,3 +3,4 @@ pub mod java;
 pub mod plain;
 pub mod handler;
 pub mod config;
+pub mod git;

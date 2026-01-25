@@ -3,7 +3,6 @@ pub mod rev_parse;
 pub mod tag;
 pub mod remote;
 pub mod push;
-pub mod config;
-pub mod result;
+pub mod tracking;
 pub mod add;
 pub mod commit;

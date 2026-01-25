@@ -2,7 +2,7 @@ use std::{env, fs, path::PathBuf, str::FromStr};
 use once_cell::sync::{OnceCell};
 use serde::{Deserialize, Serialize};
 
-use crate::{args::Args, changelog::config::ChangelogConfig, conventions::config::ConventionConfig, git::config::GitRuleset, log::LogLevel, metafile::config::MetafileTarget, semver::config::SemVerConfig, std::merge::Merge, webhooks::config::WebhookConfig};
+use crate::{args::Args, changelog::config::ChangelogConfig, conventions::config::ConventionConfig, git::tracking::GitTracking, log::LogLevel, metafile::config::Metafile, semver::config::SemVerConfig, std::merge::Merge, webhooks::config::WebhookConfig};
 
 pub const CONFIG_FILE_NAME: &str = "verzion.json";
 
@@ -18,11 +18,11 @@ pub struct Config {
   pub references: Option<Vec<String>>,
   pub log_level: Option<LogLevel>,
   pub semver: Option<SemVerConfig>,
-  pub metafiles: Option<Vec<MetafileTarget>>,
+  pub metafiles: Option<Vec<Metafile>>,
   pub convention: Option<ConventionConfig>,
   pub changelog: Option<ChangelogConfig>,
   pub webhooks: Option<WebhookConfig>,
-  pub git_ruleset: Option<GitRuleset>
+  pub tracking: Option<GitTracking>
 }
 
 impl Config {
@@ -79,7 +79,8 @@ impl Merge for Config {
       metafiles: self.metafiles.merge(other.metafiles),
       changelog: self.changelog.merge(other.changelog),
       log_level: self.log_level.or(other.log_level),
-      webhooks: self.webhooks.merge(other.webhooks)
+      webhooks: self.webhooks.merge(other.webhooks),
+      tracking: self.tracking.merge(other.tracking)
     }
   }
 }
@@ -97,7 +98,8 @@ impl Default for Config {
       metafiles: None,
       changelog: None,
       log_level: None,
-      webhooks: None
+      webhooks: None,
+      tracking: None
     }
   }
 }
