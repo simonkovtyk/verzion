@@ -3,44 +3,33 @@ use serde::{Deserialize, Serialize};
 use crate::std::merge::Merge;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct GitOriginConfig {
-  pub name: String,
-  pub enabled: Option<bool>
+pub struct GitRuleset {
+  pub commit: Option<bool>,
+  pub commit_msg: Option<String>,
+  pub push: Option<bool>
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct GitConfig {
-  pub all_origins: Option<bool>,
-  pub origins: Option<Vec<GitOriginConfig>>
-}
-
-impl GitConfig {
-  pub fn is_empty (&self) -> bool {
-    self.all_origins.is_none() && self.origins.is_none()
-  }
-
-  pub fn new (
-    all_origins: Option<bool>,
-    origins: Option<Vec<GitOriginConfig>>
-  ) -> Option<Self> {
-    let instance = Self {
-      all_origins,
-      origins
-    };
-
-    if instance.is_empty() {
-      return None;
-    }
-
-    Some(instance)
-  }
-}
-
-impl Merge for GitConfig {
-  fn merge (self, other: Self) -> Self {
+impl Merge for GitRuleset {
+  fn merge(self, other: Self) -> Self {
     Self {
-      all_origins: self.all_origins.or(other.all_origins),
-      origins: self.origins.merge(other.origins)
+      commit: self.commit.merge(other.commit),
+      commit_msg: self.commit_msg.clone().or(other.commit_msg.clone()),
+      push: self.push.merge(other.push)
     }
   }
 }
+
+pub struct GitRulesetResult {
+  pub to_add_paths: Vec<String>,
+  pub needs_push: bool
+}
+
+impl GitRulesetResult {
+  pub fn from_ruleset (ruleset: &GitRuleset, to_add_paths: Vec<String>) -> Self {
+    Self {
+      to_add_paths,
+      needs_push: ruleset.push.unwrap_or(false)
+    }
+  }
+}
+

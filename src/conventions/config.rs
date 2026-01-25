@@ -7,4 +7,6 @@ pub enum ConvetionTypes {
   Conventional
 }
 
+pub const DEFAULT_CONVENTION: ConvetionTypes = ConvetionTypes::Conventional;
+
 pub type ConventionConfig = ConvetionTypes;

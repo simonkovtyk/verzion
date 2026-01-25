@@ -74,3 +74,21 @@ impl TryFrom<&str> for Types {
     }
   }
 }
+
+impl ToString for Types {
+  fn to_string(&self) -> String {
+    match self {
+      Self::Feat => "feat".to_string(),
+      Self::Fix => "fix".to_string(),
+      Self::Chore => "chore".to_string(),
+      Self::Docs => "docs".to_string(),
+      Self::Style => "style".to_string(),
+      Self::Refactor => "refactor".to_string(),
+      Self::Perf => "perf".to_string(),
+      Self::Test => "test".to_string(),
+      Self::Build => "build".to_string(),
+      Self::Ci => "ci".to_string(),
+      Self::Revert => "revert".to_string()
+    }
+  }
+}

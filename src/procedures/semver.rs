@@ -1,4 +1,4 @@
-use crate::{config::Config, git::tag::GitTag, semver::{core::SemVer, r#type::SemVerType}};
+use crate::{config::Config, semver::{core::SemVer, r#type::SemVerType}};
 
 pub struct GetSemVerResult {
   pub semver: SemVer
@@ -6,7 +6,7 @@ pub struct GetSemVerResult {
 
 pub fn get_semver (
   semver_type: &SemVerType,
-  latest_tag: Option<GitTag>
+  latest_semver: Option<SemVer>
 ) -> GetSemVerResult {
   let config = Config::inject();
 
@@ -18,8 +18,8 @@ pub fn get_semver (
     };
   }
 
-  let base_semver = if let Some(inner_latest_tag) = latest_tag && inner_latest_tag.semver.is_fullfilled() {
-    inner_latest_tag.semver.clone()
+  let base_semver = if let Some(inner_latest_semver) = latest_semver && inner_latest_semver.is_fullfilled() {
+    inner_latest_semver
   } else {
     SemVer::default()
   };

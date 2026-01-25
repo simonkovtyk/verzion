@@ -1,9 +1,14 @@
 use clap::Parser;
 
-use crate::{config::Config, conventions::config::ConvetionTypes, git::config::{GitConfig}, log::LogLevel, semver::config::SemVerConfig};
+use crate::{config::Config, conventions::config::ConvetionTypes, log::LogLevel, semver::config::SemVerConfig};
 
 #[derive(Parser, Debug, Clone)]
-#[command(arg_required_else_help = false, name = "verzion", version, about = "verzion - Commit Analyzer")]
+#[command(
+  arg_required_else_help = false,
+  name = "verzion",
+  version,
+  about = "verzion - Commit Analyzer"
+)]
 pub struct Args {
   /* general */
   #[arg(long, help = "Path to configuration file", help_heading = "General")]
@@ -78,10 +83,6 @@ impl Into<Config> for &Args {
       metafiles: None,
       changelog: None,
       log_level: self.log_level.clone(),
-      git: GitConfig::new(
-        self.git_all_origins,
-        None
-      ),
       webhooks: None
     }
   }

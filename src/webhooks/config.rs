@@ -1,7 +1,7 @@
 use std::env;
 use serde::{Deserialize, Serialize};
 
-use crate::git::remote::get_remote_url;
+use crate::{config::Config, git::remote::get_remote_url, std::command::CommandOptions};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum WebhookType {
@@ -74,12 +74,16 @@ impl WebhookItemConfig {
     None
   }
 
-  pub fn get_url (&self) -> Option<String> {
-    if self.url.is_some() {
-      return self.url.clone();
+  pub fn get_url (&self) -> Result<String, String> {
+    if let Some(inner_url) = self.url.as_ref() {
+      return Ok(inner_url.clone());
     }
 
-    return get_remote_url(self.origin.as_deref());
+    let config = Config::inject();
+
+    get_remote_url(self.origin.as_deref(), CommandOptions {
+      cwd: config.cwd.clone()
+    })
   }
 }
 

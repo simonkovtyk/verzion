@@ -1,7 +1,7 @@
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 
-use crate::{config::Config, std::command::CommandOptions};
+use crate::std::command::CommandOptions;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GitLogStakeholder {
