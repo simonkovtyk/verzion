@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 use clap::{ValueEnum};
 
-use crate::{config::Config, git::{add::add, commit::commit}, std::{command::CommandOptions, merge::Merge}};
+use crate::{config::Config, conventions::{config::{ConvetionTypes, DEFAULT_CONVENTION}, conventional::{advertise::get_commit_msg_footer, builder::{ConventionalBuilder, ConventionalHeader}, types::Types}}, git::{add::add, commit::commit}, semver::core::SemVer, std::{command::CommandOptions, merge::Merge}};
 
 pub const DEFAULT_TRACKED: bool = false;
 pub const DEFAULT_MESSAGE: Option<String> = None;
 pub const DEFAULT_STRATEGY: GitTrackingStrategy = GitTrackingStrategy::Batch;
+pub const DEFAULT_ORIGINS: [&str; 1] = ["origin"];
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Eq, Ord, ValueEnum)]
 #[serde(rename_all = "lowercase")]
@@ -22,6 +23,78 @@ impl Merge for GitTrackingStrategy {
       Self::Batch => other,
       Self::Individual => self
     }
+  }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GitTrackingRoot {
+  /* Git remote origins to track against */
+  pub origins: Option<Vec<String>>,
+  /* Wether to commit the relating change */
+  pub enabled: Option<bool>,
+  /* Git commit message customization */
+  pub message: Option<String>
+}
+
+impl GitTrackingRoot {
+  pub fn is_empty (&self) -> bool {
+    self.origins.is_none()
+      && self.enabled.is_none()
+      && self.message.is_none()
+  }
+
+  pub fn new (
+    origins: Option<Vec<String>>,
+    enabled: Option<bool>,
+    message: Option<String>
+  ) -> Option<Self> {
+    let instance = Self {
+      origins,
+      enabled,
+      message
+    };
+    if instance.is_empty() {
+      None
+    } else {
+      Some(instance)
+    }
+  }
+
+  pub fn is_enabled (&self) -> bool {
+    self.enabled.unwrap_or(DEFAULT_TRACKED)
+  }
+
+  pub fn track_batch (
+    &self,
+    semver: &SemVer,
+    batch: GitTrackingBatch
+  ) -> Result<(), String> {
+    if !self.is_enabled() {
+      return Ok(());
+    }
+
+    let config = Config::inject();
+
+    for path in batch.iter() {
+     add(path, CommandOptions {
+      cwd: config.cwd.clone()
+      })?;
+    }
+
+    let message = self.message.clone().unwrap_or(get_commit_msg(semver));
+
+    commit(message.as_str(), CommandOptions {
+      cwd: config.cwd.clone()
+    })?;
+
+    for origin in self.origins
+      .as_ref()
+      .map(|v| v.iter().map(|v| v.as_str()).collect())
+      .unwrap_or(DEFAULT_ORIGINS.to_vec()) {
+      
+    }
+
+    Ok(())
   }
 }
 
@@ -45,7 +118,7 @@ impl GitTracking {
   pub fn new (
     enabled: Option<bool>,
     strategy: Option<GitTrackingStrategy>,
-    message: Option<String>
+    message: Option<String>,
   ) -> Option<Self> {
     let instance = Self {
       enabled,
@@ -91,10 +164,10 @@ impl GitTracking {
           cwd: config.cwd.clone()
         }).ok()?;
 
-        return None;
+        None
       }
       GitTrackingStrategy::Batch => {
-        return Some(path.to_string());
+        Some(path.to_string())
       }
     }
   }
@@ -105,13 +178,45 @@ impl Merge for GitTracking {
     Self {
       enabled: self.enabled.merge(other.enabled),
       strategy: self.strategy.merge(other.strategy),
-      message: self.message.or(other.message),
+      message: self.message.or(other.message)
     }
   }
 }
 
 /*
  * If tracking is enabled for a certain file, but no atomic commit should be made, we need to collect all paths for adding a single commit later.
- *
  */
 pub type GitTrackingBatch = Vec<String>;
+
+pub fn get_conventional_commit_msg (
+  semver: &SemVer
+) -> String {
+  let config = Config::inject();
+
+  let semver_format = config.semver.as_ref().map(|v| v.format.clone()).flatten();
+
+  let conventional_header = ConventionalHeader::new(
+    Some(Types::Chore),
+    None,
+    Some(
+      format!("release {}", semver.format(&semver_format))
+    ),
+    Some(false)
+  );
+
+  return ConventionalBuilder::new(
+    Some(conventional_header.to_string()),
+    None,
+    Some(vec![get_commit_msg_footer()])
+  ).to_string();
+}
+
+pub fn get_commit_msg (
+  semver: &SemVer
+) -> String {
+  let config = Config::inject();
+
+  match config.convention.as_ref().unwrap_or(&DEFAULT_CONVENTION) {
+    ConvetionTypes::Conventional => get_conventional_commit_msg(semver)
+  }
+}

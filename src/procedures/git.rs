@@ -1,4 +1,4 @@
-use crate::{config::{Config, ToExitCode}, conventions::handler::resolve_semver_type, git::{log::{GitLog, get_logs}, push::push_tag, remote::{GitRemote, get_remote_names, get_remote_url}, tag::{GitTag, create_tag, get_log_by_tag, get_tags}}, semver::{core::SemVer, r#type::SemVerType, utils::{SemVerWithTag, find_latest_semver}}, std::{command::CommandOptions, panic::ExpectWithStatusCode}};
+use crate::{config::{Config, ToExitCode}, conventions::handler::resolve_semver_type, git::{add::add, commit::{self, commit}, log::{GitLog, get_logs}, push::{push, push_tag}, remote::{GitRemote, get_remote_names, get_remote_url}, tag::{GitTag, create_tag, get_log_by_tag, get_tags}, tracking::{GitTrackingBatch, get_commit_msg}}, semver::{core::SemVer, r#type::SemVerType, utils::{SemVerWithTag, find_latest_semver}}, std::{command::CommandOptions, panic::ExpectWithStatusCode}};
 
 pub struct AnalyzeTagsResult {
   pub latest_tag: GitTag,
@@ -124,4 +124,33 @@ pub fn publish (
   PreparePublishResult {
     remotes
   }
+}
+
+pub fn handle_tracking_batch (
+  tracking_batch: GitTrackingBatch,
+  semver: &SemVer
+) -> Result<(), String> {
+  let config = Config::inject();
+
+  for path in tracking_batch {
+    add(&path, CommandOptions {
+      cwd: config.cwd.clone()
+    })?;
+  }
+
+  commit(
+    &get_commit_msg(semver),
+    CommandOptions {
+      cwd: config.cwd.clone()
+    }
+  )?;
+
+  push(
+    origin_name,
+    CommandOptions {
+      cwd: config.cwd.clone()
+    }
+  )?;
+
+  Ok(())
 }
