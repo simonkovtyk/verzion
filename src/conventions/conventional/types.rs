@@ -15,6 +15,7 @@ pub struct Message {
 #[derive(Debug, Clone)]
 pub struct Header {
   pub r#type: Types,
+  #[allow(dead_code)]
   pub scope: Option<String>,
   pub content: String,
   pub breaking_change: BreakingChange

@@ -5,13 +5,14 @@ pub struct GitLabRemote {
 }
 
 impl GitLabRemote {
+  #[allow(dead_code)]
   pub fn to_origin (&mut self, token: &Option<String>) -> String {
     if self.url.scheme() != "http" || self.url.scheme() != "https" {
-      self.url.set_scheme("https");
+      self.url.set_scheme("https").ok();
     }
 
-    self.url.set_username("verzion");
-    self.url.set_password(token.as_deref());
+    self.url.set_username("verzion").ok();
+    self.url.set_password(token.as_deref()).ok();
 
     self.url.to_string()
   }
@@ -21,6 +22,7 @@ impl GitLabRemote {
     path[1..path.len() - 4].to_string()
   }
 
+  #[allow(dead_code)]
   pub fn get_api_url (&self) -> String {
     let mut url = self.url.clone();
 

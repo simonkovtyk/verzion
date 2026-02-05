@@ -1,3 +1,6 @@
+pub const EXIT_ERROR: i32 = 1;
+pub const EXIT_SUCCESS: i32 = 0;
+
 pub trait ExpectWithStatusCode<T> {
   fn expect_with_status_code (self, msg: &str, code: i32) -> T;
 }

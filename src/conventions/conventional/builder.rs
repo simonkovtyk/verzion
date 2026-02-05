@@ -19,21 +19,25 @@ impl ConventionalBuilder {
     }
   }
 
+  #[allow(dead_code)]
   pub fn set_header (&mut self, header: impl Into<String>) -> &mut Self {
     self.header = Some(header.into());
     self
   }
 
+  #[allow(dead_code)]
   pub fn set_body (&mut self, body: impl Into<String>) -> &mut Self {
     self.body = Some(body.into());
     self
   }
 
+  #[allow(dead_code)]
   pub fn set_footer (&mut self, footer: impl Into<Vec<String>>) -> &mut Self {
     self.footer = Some(footer.into());
     self
   }
 
+  #[allow(dead_code)]
   pub fn add_footer (&mut self, footer: impl Into<String>) -> &mut Self {
     if let Some(inner_footer) = self.footer.as_mut() {
       inner_footer.push(footer.into());
@@ -45,9 +49,11 @@ impl ConventionalBuilder {
   }
 }
 
-impl ToString for ConventionalBuilder {
-  fn to_string(&self) -> String {
-    let header = self.header.as_ref().expect("Header is required for Conventional Commit");
+impl TryInto<String> for ConventionalBuilder {
+  type Error = String;
+
+  fn try_into(self) -> Result<String, Self::Error> {
+    let header = self.header.as_ref().ok_or("Header is required for Conventional Commit")?;
     let body = if let Some(inner_body) = self.body.as_ref() {
         format!("\n\n{}", inner_body)
       } else {
@@ -59,7 +65,7 @@ impl ToString for ConventionalBuilder {
         "".to_string()
       };
     
-    format!("{}{}{}", header, body, footer)
+    Ok(format!("{}{}{}", header, body, footer))
   }
 }
 
@@ -95,47 +101,56 @@ impl ConventionalHeader {
     }
   }
 
+  #[allow(dead_code)]
   pub fn set_type (&mut self, r#type: impl Into<Types>) -> &mut Self {
     self.r#type = Some(r#type.into());
     self
   }
 
+  #[allow(dead_code)]
   pub fn set_breaking_change (&mut self, breaking_change: impl Into<bool>) -> &mut Self {
     self.breaking_change = Some(breaking_change.into());
     self
   }
 
+  #[allow(dead_code)]
   pub fn set_scope (&mut self, scope: impl Into<String>) -> &mut Self {
     self.scope = Some(scope.into());
     self
   }
 
+  #[allow(dead_code)]
   pub fn set_content (&mut self, content: impl Into<String>) -> &mut Self {
     self.content = Some(content.into());
     self
   }
 }
 
-impl ToString for ConventionalHeader {
-  fn to_string(&self) -> String {
+impl TryInto<String> for ConventionalHeader {
+  type Error = String;
+
+  fn try_into(self) -> Result<String, Self::Error> {
     let r#type = self.r#type
       .as_ref()
-      .expect("Type is required for Conventional Header")
+      .ok_or("Type is required for Conventional Header")?
       .to_string();
     let content = self.content
       .as_ref()
-      .expect("Content is required for Conventional Header");
+      .ok_or("Content is required for Conventional Header")?;
     let breaking_change = if self.breaking_change.unwrap_or(false) {
       "!"
     } else {
       ""
     };
 
-    if let Some(scope) = self.scope.as_ref() {
-      return format!("{}{}({}): {}", r#type, breaking_change, scope, content);
+    match self.scope.as_ref() {
+      Some(scope) => {
+        return Ok(format!("{}{}({}): {}", r#type, breaking_change, scope, content));
+      },
+      _ => {
+        return Ok(format!("{}{}: {}", r#type, breaking_change, content));
+      }
     }
-
-    format!("{}{}: {}", r#type, breaking_change, content)
   }
 }
 
@@ -166,29 +181,33 @@ impl ConventionalFooter {
     }
   }
 
+  #[allow(dead_code)]
   pub fn set_breaking_changes (&mut self, breaking_change: impl Into<bool>) -> &mut Self {
     self.breaking_change = Some(breaking_change.into());
     self
   }
 
+  #[allow(dead_code)]
   pub fn set_content (&mut self, content: impl Into<String>) -> &mut Self {
     self.content = Some(content.into());
     self
   }
 }
 
-impl ToString for ConventionalFooter {
-  fn to_string(&self) -> String {
+impl TryInto<String> for ConventionalFooter {
+  type Error = String;
+
+  fn try_into(self) -> Result<String, Self::Error> {
     let content = self.content
       .as_ref()
-      .expect("Content is required for Conventional Footer");
+      .ok_or("Content is required for Conventional Footer")?;
     let breaking_change = if self.breaking_change.unwrap_or(false) {
       "BREAKING CHANGE: "
     } else {
       ""
     };
 
-    format!("{}{}", breaking_change, content)
+    Ok(format!("{}{}", breaking_change, content))
   }
 }
 

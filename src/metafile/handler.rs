@@ -3,10 +3,10 @@ use std::path::Path;
 use crate::{config::Config, git::{tracking::GitTrackingBatch}, metafile::{config::MetafileTypes, git::get_commit_msg, java, node, plain}, semver::core::SemVer};
 
 pub struct HandleMetafilesResult {
-  pub tracking_batch: Option<GitTrackingBatch>
+  pub tracking_batch: GitTrackingBatch
 }
 
-pub fn handle_metafile (semver: &SemVer) -> Option<HandleMetafilesResult> {
+pub fn handle_metafile (semver: &SemVer) -> Result<HandleMetafilesResult, String> {
   let config = Config::inject();
 
   let mut tracking_batch = Vec::new();
@@ -21,36 +21,39 @@ pub fn handle_metafile (semver: &SemVer) -> Option<HandleMetafilesResult> {
         path = cwd_path.join(&path);
       }
 
-      let path_str = path.to_str().expect("Contains invalid UTF-8 in path");
+      let path_str = path.to_str().ok_or("Contains invalid UTF-8 in path");
 
-      match metafile.r#type {
-        MetafileTypes::Plain => {
-          plain::write::write_semver(path_str, semver);
+      match path_str {
+        Ok(inner_path_str) => {
+          match metafile.r#type {
+            MetafileTypes::Plain => {
+              plain::write::write_semver(inner_path_str, semver)?;
+            },
+            MetafileTypes::Java => {
+              java::write::write_semver(inner_path_str, semver)?;
+            },
+            MetafileTypes::Node => {
+              node::write::write_semver(inner_path_str, semver)?;
+            }
+          }
+
+          let tracking_path = metafile.tracking
+            .as_ref()
+            .map(|v| v.track(inner_path_str, &get_commit_msg()))
+            .flatten();
+
+          if let Some(inner_tracking_path) = tracking_path {
+            tracking_batch.push(inner_tracking_path);
+          }
         },
-        MetafileTypes::Java => {
-          java::write::write_semver(path_str, semver);
-        },
-        MetafileTypes::Node => {
-          node::write::write_semver(path_str, semver);
+        Err(_) => {
+          return Err("Contains invalid UTF-8 in path".to_string());
         }
-      }
-
-      let tracking_path = metafile.tracking
-        .as_ref()
-        .map(|v| v.track(path_str, &get_commit_msg()))
-        .flatten();
-
-      if let Some(inner_tracking_path) = tracking_path {
-        tracking_batch.push(inner_tracking_path);
       }
     }
   }
 
-  return Some(HandleMetafilesResult {
-    tracking_batch: if tracking_batch.is_empty() {
-      None
-    } else {
-      Some(tracking_batch)
-    }
+  return Ok(HandleMetafilesResult {
+    tracking_batch: tracking_batch
   });
 }

@@ -1,6 +1,8 @@
-use crate::{config::Config, conventions::{config::{ConvetionTypes, DEFAULT_CONVENTION}, conventional::{advertise::get_commit_msg_footer, builder::{ConventionalBuilder, ConventionalHeader}, types::Types}}};
+use crate::{config::{Config, ToExitCode}, conventions::{config::{ConvetionTypes, DEFAULT_CONVENTION}, conventional::{advertise::get_commit_msg_footer, builder::{ConventionalBuilder, ConventionalHeader}, types::Types}}, std::panic::ExpectWithStatusCode};
 
 pub fn get_conventional_commit_msg () -> String {
+  let config = Config::inject();
+
   let conventional_header = ConventionalHeader::new(
     Some(Types::Chore),
     Some("changelog".to_string()),
@@ -9,10 +11,14 @@ pub fn get_conventional_commit_msg () -> String {
   );
 
   return ConventionalBuilder::new(
-    Some(conventional_header.to_string()),
+    conventional_header.try_into().ok(),
     None,
     Some(vec![get_commit_msg_footer()])
-  ).to_string();
+  ).try_into()
+    .expect_with_status_code(
+      "Could not get conventional commit msg",
+      config.to_exit_code()
+    );
 }
 
 pub fn get_commit_msg () -> String {

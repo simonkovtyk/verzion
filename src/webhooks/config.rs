@@ -22,6 +22,7 @@ pub struct WebhookItemConfig {
 }
 
 impl WebhookItemConfig {
+  #[allow(dead_code)]
   pub fn is_enabled (&self) -> bool {
     let is_empty = self.is_empty();
 
@@ -36,6 +37,7 @@ impl WebhookItemConfig {
     self.r#type.is_none() && self.origin.is_none() && self.enabled.is_none() && self.url.is_none() && self.token.is_none() && self.token_env.is_none() && self.http_retries.is_none()
   }
 
+  #[allow(dead_code)]
   pub fn new (
     r#type: Option<WebhookType>,
     origin: Option<String>,
@@ -88,4 +90,3 @@ impl WebhookItemConfig {
 }
 
 pub type WebhookConfig = Vec<WebhookItemConfig>;
-

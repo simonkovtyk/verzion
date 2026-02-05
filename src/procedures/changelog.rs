@@ -1,8 +1,8 @@
-use crate::{changelog::{git::get_commit_msg, handler::generate_changelog}, config::Config, fs::write_str_to_file, git::{log::GitLog}};
+use crate::{changelog::{git::get_commit_msg, handler::generate_changelog}, config::Config, fs::write_str_to_file, git::{log::GitLog, tracking::GitTrackingBatch}};
 
 pub struct CreateChangelogResult {
   pub changelog: String,
-  pub tracking_batch: Option<String>
+  pub tracking_batch: GitTrackingBatch
 }
 
 pub fn create_changelog (
@@ -17,23 +17,21 @@ pub fn create_changelog (
   }
 
   let changelog = generate_changelog(logs);
+  let mut tracking_batch = Vec::new();
 
   if let Some(changelog_path) = changelog_config.path {
     write_str_to_file(&changelog_path, changelog.as_str());
 
-    let tracking_batch = changelog_config.tracking
+    if let Some(inner_tracking_batch)  = changelog_config.tracking
       .as_ref()
-      .map(|v| v.track(&changelog_path, &get_commit_msg()))
-      .flatten();
-
-    return Some(CreateChangelogResult {
-      changelog,
-      tracking_batch
-    });
+      .map(|v| v.track(&changelog_path, &get_commit_msg()).map(|v| vec![v]))
+      .flatten() {
+        tracking_batch.extend(inner_tracking_batch);
+    }
   }
 
   Some(CreateChangelogResult {
     changelog,
-    tracking_batch: None
+    tracking_batch
   })
 }

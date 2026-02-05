@@ -1,16 +1,20 @@
-use crate::{config::{Config, ToExitCode}, conventions::handler::resolve_semver_type, git::{add::add, commit::{self, commit}, log::{GitLog, get_logs}, push::{push, push_tag}, remote::{GitRemote, get_remote_names, get_remote_url}, tag::{GitTag, create_tag, get_log_by_tag, get_tags}, tracking::{GitTrackingBatch, get_commit_msg}}, semver::{core::SemVer, r#type::SemVerType, utils::{SemVerWithTag, find_latest_semver}}, std::{command::CommandOptions, panic::ExpectWithStatusCode}};
+use crate::{config::{Config, ToExitCode}, conventions::handler::resolve_semver_type, git::{log::{GitLog, get_logs}, push::push_tag, remote::{GitRemote, get_remote_names, get_remote_url}, tag::{GitTag, create_tag, get_log_by_tag, get_tags}}, metafile::handler::HandleMetafilesResult, procedures::changelog::CreateChangelogResult, semver::{core::SemVer, r#type::SemVerType, utils::{SemVerWithTag, find_latest_semver}}, std::{command::CommandOptions, panic::ExpectWithStatusCode}};
 
 pub struct AnalyzeTagsResult {
+  #[allow(dead_code)]
   pub latest_tag: GitTag,
   pub latest_log: GitLog,
   pub latest_semver: SemVer
 }
 
-pub fn analyze_tags () -> Result<AnalyzeTagsResult, String> {
+pub fn analyze_tags () -> AnalyzeTagsResult {
   let config = Config::inject();
   let tags = get_tags(CommandOptions {
     cwd: config.cwd.clone()
-  })?;
+  }).expect_with_status_code(
+    "No tags found",
+    config.to_exit_code()
+  );
 
   let mut semver_with_tags: Vec<SemVerWithTag> = Vec::new();
 
@@ -33,18 +37,22 @@ pub fn analyze_tags () -> Result<AnalyzeTagsResult, String> {
       "Found no latest semver",
       config.to_exit_code()
     );
+
   let latest_log = get_log_by_tag(
     &latest_semver_with_tags.tag,
     CommandOptions {
-    cwd: config.cwd.clone()
+      cwd: config.cwd.clone()
     }
-  )?;
+  ).expect_with_status_code(
+    "Latest log could not be gathered",
+    config.to_exit_code()
+  );
 
-  Ok(AnalyzeTagsResult {
+  AnalyzeTagsResult {
     latest_log: latest_log,
     latest_tag: latest_semver_with_tags.tag,
     latest_semver: latest_semver_with_tags.semver
-  })
+  }
 }
 
 pub struct AnalyzeLogsResult {
@@ -60,7 +68,10 @@ pub fn analyze_logs (from: Option<GitLog>) -> AnalyzeLogsResult {
     CommandOptions {
       cwd: config.cwd.clone()
     }
-  ).expect_with_status_code("No logs found", config.to_exit_code());
+  ).expect_with_status_code(
+    "No logs found",
+    config.to_exit_code()
+  );
 
   let semver_type = resolve_semver_type(&logs);
 
@@ -71,10 +82,11 @@ pub fn analyze_logs (from: Option<GitLog>) -> AnalyzeLogsResult {
 }
 
 pub struct PreparePublishResult {
+  #[allow(dead_code)]
   pub remotes: Vec<GitRemote>
 }
 
-pub fn publish (
+pub fn publish_tag (
   semver: &SemVer
 ) -> PreparePublishResult {
   let config = Config::inject();
@@ -127,30 +139,32 @@ pub fn publish (
 }
 
 pub fn handle_tracking_batch (
-  tracking_batch: GitTrackingBatch,
-  semver: &SemVer
-) -> Result<(), String> {
+  semver: &SemVer,
+  create_changelog_result: &Option<CreateChangelogResult>,
+  handle_metafile_result: &Option<HandleMetafilesResult>
+) {
   let config = Config::inject();
+  let mut tracking_batch = Vec::<String>::new();
 
-  for path in tracking_batch {
-    add(&path, CommandOptions {
-      cwd: config.cwd.clone()
-    })?;
+  if let Some(inner_tracking_batch) = create_changelog_result.as_ref()
+    .map(|v| v.tracking_batch.clone()) {
+    tracking_batch.extend(inner_tracking_batch);
   }
 
-  commit(
-    &get_commit_msg(semver),
-    CommandOptions {
-      cwd: config.cwd.clone()
-    }
-  )?;
+  if let Some(inner_tracking_batch) = handle_metafile_result.as_ref()
+    .map(|v| v.tracking_batch.clone()) {
+    tracking_batch.extend(inner_tracking_batch);
+  }
 
-  push(
-    origin_name,
-    CommandOptions {
-      cwd: config.cwd.clone()
-    }
-  )?;
-
-  Ok(())
+  if let Some(inner_tracking) = config.tracking.as_ref() {
+    inner_tracking
+      .track_batch(
+        semver,
+        tracking_batch
+      )
+      .expect_with_status_code(
+        "Could not handle git tracking batch",
+        config.to_exit_code()
+      );
+  }
 }

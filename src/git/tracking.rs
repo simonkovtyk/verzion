@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use clap::{ValueEnum};
 
-use crate::{config::Config, conventions::{config::{ConvetionTypes, DEFAULT_CONVENTION}, conventional::{advertise::get_commit_msg_footer, builder::{ConventionalBuilder, ConventionalHeader}, types::Types}}, git::{add::add, commit::commit}, semver::core::SemVer, std::{command::CommandOptions, merge::Merge}};
+use crate::{config::{Config, ToExitCode}, conventions::{config::{ConvetionTypes, DEFAULT_CONVENTION}, conventional::{advertise::get_commit_msg_footer, builder::{ConventionalBuilder, ConventionalHeader}, types::Types}}, git::{add::add, commit::commit, push::push}, semver::core::SemVer, std::{command::CommandOptions, merge::Merge, panic::ExpectWithStatusCode}};
 
 pub const DEFAULT_TRACKED: bool = false;
+#[allow(dead_code)]
 pub const DEFAULT_MESSAGE: Option<String> = None;
 pub const DEFAULT_STRATEGY: GitTrackingStrategy = GitTrackingStrategy::Batch;
 pub const DEFAULT_ORIGINS: [&str; 1] = ["origin"];
@@ -28,12 +29,22 @@ impl Merge for GitTrackingStrategy {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GitTrackingRoot {
-  /* Git remote origins to track against */
-  pub origins: Option<Vec<String>>,
   /* Wether to commit the relating change */
   pub enabled: Option<bool>,
+  /* Git remote origins to track against */
+  pub origins: Option<Vec<String>>,
   /* Git commit message customization */
   pub message: Option<String>
+}
+
+impl Merge for GitTrackingRoot {
+  fn merge(self, other: Self) -> Self {
+    Self {
+      enabled: self.enabled.merge(other.enabled),
+      origins: self.origins.or(other.origins),
+      message: self.message.or(other.message)
+    }
+  }
 }
 
 impl GitTrackingRoot {
@@ -91,7 +102,9 @@ impl GitTrackingRoot {
       .as_ref()
       .map(|v| v.iter().map(|v| v.as_str()).collect())
       .unwrap_or(DEFAULT_ORIGINS.to_vec()) {
-      
+      push(origin, CommandOptions {
+        cwd: config.cwd.clone()
+      })?;
     }
 
     Ok(())
@@ -205,10 +218,14 @@ pub fn get_conventional_commit_msg (
   );
 
   return ConventionalBuilder::new(
-    Some(conventional_header.to_string()),
+    conventional_header.try_into().ok(),
     None,
     Some(vec![get_commit_msg_footer()])
-  ).to_string();
+  ).try_into()
+    .expect_with_status_code(
+      "Could not get conventional commit message",
+      config.to_exit_code()
+    );
 }
 
 pub fn get_commit_msg (

@@ -56,6 +56,7 @@ impl SemVerConfig {
 }
 
 impl SemVerConfig {
+  #[allow(dead_code)]
   pub fn to_semver (self) -> Option<SemVer> {
     let mut semver = if let Some(inner_semver) = self.semver {
       SemVer::try_from_str(&inner_semver).ok()?

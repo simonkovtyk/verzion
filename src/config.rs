@@ -1,10 +1,26 @@
-use std::{env, fs, path::PathBuf, str::FromStr};
+use std::{fs, path::PathBuf, str::FromStr};
 use once_cell::sync::{OnceCell};
 use serde::{Deserialize, Serialize};
 
-use crate::{args::Args, changelog::config::ChangelogConfig, conventions::config::ConventionConfig, git::tracking::GitTracking, log::LogLevel, metafile::config::Metafile, semver::config::SemVerConfig, std::merge::Merge, webhooks::config::WebhookConfig};
+use crate::{args::Args, changelog::config::ChangelogConfig, conventions::config::ConventionConfig, git::tracking::GitTrackingRoot, log::LogLevel, metafile::config::Metafile, package::NAME, semver::config::SemVerConfig, std::{merge::Merge, panic::{EXIT_ERROR, EXIT_SUCCESS, ExpectWithStatusCode}}, webhooks::config::WebhookConfig};
 
-pub const CONFIG_FILE_NAME: &str = "verzion.json";
+pub const DEFAULT_CONFIG_FILE_EXTENSION: &str = "json";
+pub const DEFAULT_CONFIG_FILE_BASE: &str = "config";
+
+pub fn get_default_config_file_name () -> String {
+  format!(
+    "{}.{}",
+    DEFAULT_CONFIG_FILE_BASE,
+    DEFAULT_CONFIG_FILE_EXTENSION
+  )
+}
+
+pub fn get_default_config_dir () -> String {
+  format!(
+    ".{}",
+    NAME.to_lowercase()
+  )
+}
 
 pub static CONFIG: OnceCell<Config> = OnceCell::new();
 
@@ -22,7 +38,7 @@ pub struct Config {
   pub convention: Option<ConventionConfig>,
   pub changelog: Option<ChangelogConfig>,
   pub webhooks: Option<WebhookConfig>,
-  pub tracking: Option<GitTracking>
+  pub tracking: Option<GitTrackingRoot>
 }
 
 impl Config {
@@ -31,24 +47,35 @@ impl Config {
   }
 
   pub fn from_args (args: &Args) -> Self {
-    let path_buf = args.config.clone()
+    let path_buf = args.config.as_ref()
       .map(|v|
-        PathBuf::from_str(&v).expect("Could not parse")
+        PathBuf::from_str(&v)
+          .expect_with_status_code(
+            "Could not parse",
+            args.to_exit_code()
+          )
       )
       .unwrap_or(
-        PathBuf::from_str(&args.cwd.clone()
-          .unwrap_or(
-            env::current_dir().expect("Could not get current directory")
-              .to_str()
-              .expect("Contains invalid UTF-8")
-              .to_string()
+        PathBuf::from_str(&args.get_cwd())
+        .expect_with_status_code(
+          "Could not parse cwd",
+          args.to_exit_code()
         )
-      ).expect("Could not parse cwd").join(CONFIG_FILE_NAME)
-    );
+        .join(get_default_config_dir())
+        .join(get_default_config_file_name())
+      );
 
-    let content_buf = fs::read(path_buf).expect("Couldn't read config file");
+    let content_buf = fs::read(path_buf)
+      .expect_with_status_code(
+        "Couldn't read config file",
+        args.to_exit_code()
+      );
 
-    serde_json::from_slice::<Config>(&content_buf).expect("Couldn't parse config file")
+    serde_json::from_slice::<Config>(&content_buf)
+      .expect_with_status_code(
+        "Couldn't parse config file",
+        args.to_exit_code()
+      )
   }
 }
 
@@ -59,10 +86,10 @@ pub trait ToExitCode {
 impl ToExitCode for &Config {
   fn to_exit_code(&self) -> i32 {
     self.graceful.map(|v| if v {
-      0
+      EXIT_SUCCESS
     } else {
-      1
-    }).unwrap_or(1)
+      EXIT_ERROR
+    }).unwrap_or(EXIT_SUCCESS)
   }
 }
 

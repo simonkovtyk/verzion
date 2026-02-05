@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub trait Capitalize {
   fn capitalize (&self) -> Result<String, &'static str>;
 }

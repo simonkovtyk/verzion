@@ -4,21 +4,23 @@ use url::Url;
 
 #[derive(Debug)]
 pub struct GitHubRemote {
+  #[allow(dead_code)]
   pub url: Url,
   pub owner: String,
   pub repository: String
 }
 
 impl GitHubRemote {
+  #[allow(dead_code)]
   pub fn to_origin (&self, token: &Option<String>) -> String {
     let mut url = self.url.clone();
 
     if self.url.scheme() != "https" {
-      url.set_scheme("https");
+      url.set_scheme("https").ok();
     }
 
-    url.set_username("verzion");
-    url.set_password(token.as_deref());
+    url.set_username("verzion").ok();
+    url.set_password(token.as_deref()).ok();
 
     url.to_string()
   }

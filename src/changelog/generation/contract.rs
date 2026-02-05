@@ -11,5 +11,6 @@ pub struct ChangelogData {
   pub features: Option<Vec<ChangelogMessage>>,
   pub fixes: Option<Vec<ChangelogMessage>>,
   pub breaking_changes: Option<Vec<ChangelogMessage>>,
+  #[allow(dead_code)]
   pub contibutors: Option<Vec<GitLogStakeholder>>
 }

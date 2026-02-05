@@ -1,4 +1,4 @@
-use crate::{args::{self, Args}, config::{CONFIG, Config}, std::merge::Merge};
+use crate::{args::{self, Args}, config::{CONFIG, Config}, std::{merge::Merge}};
 use clap::Parser;
 
 pub fn process_config () {

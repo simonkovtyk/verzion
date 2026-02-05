@@ -4,6 +4,7 @@ use crate::std::command::CommandOptions;
 
 pub struct GitRemote {
   pub name: String,
+  #[allow(dead_code)]
   pub url: String
 }
 
@@ -63,6 +64,7 @@ pub fn get_remote_names (options: CommandOptions) -> Result<Vec<String>, String>
   Ok(names)
 }
 
+#[allow(dead_code)]
 pub fn set_remote (remote: &GitRemote, options: CommandOptions) -> Result<(), String> {
   let mut command = Command::new("git");
 
