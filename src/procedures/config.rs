@@ -1,4 +1,4 @@
-use crate::{args::{self, Args}, config::{CONFIG, Config}, std::{merge::Merge}};
+use crate::{args::{self, Args}, config::{CONFIG, Config}, std::merge::Merge};
 use clap::Parser;
 
 pub fn process_config () {
@@ -10,6 +10,6 @@ pub fn process_config () {
     config
   );
 
-  CONFIG.set(config)
+  CONFIG.set(config.clone())
     .expect("Could not update config");
 }

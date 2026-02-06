@@ -1,7 +1,7 @@
 use std::env;
 use serde::{Deserialize, Serialize};
 
-use crate::{config::Config, git::remote::get_remote_url, std::command::CommandOptions};
+use crate::{config::Config, git::remote::get_remote_url, std::command::CommandOptions, webhooks::{custom, github, gitlab}};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum WebhookType {
@@ -69,11 +69,17 @@ impl WebhookItemConfig {
       return Some(token);
     }
 
-    if let Some(token_env) = self.token_env.clone() {
-      return env::var(token_env).ok();
-    }
+    let token_env = match self.token_env.as_ref() {
+      Some(token_env) => token_env.as_str(),
+      None => match self.r#type {
+        Some(WebhookType::GitHub) => github::config::TOKEN_ENV,
+        Some(WebhookType::GitLab) => gitlab::config::TOKEN_ENV,
+        Some(WebhookType::Custom) => custom::config::TOKEN_ENV,
+        None => return None
+      }
+    };
 
-    None
+    env::var(token_env).ok()
   }
 
   pub fn get_url (&self) -> Result<String, String> {

@@ -1,4 +1,4 @@
-use crate::{config::{Config, ToExitCode}, conventions::handler::resolve_semver_type, git::{log::{GitLog, get_logs}, push::push_tag, remote::{GitRemote, get_remote_names, get_remote_url}, tag::{GitTag, create_tag, get_log_by_tag, get_tags}}, metafile::handler::HandleMetafilesResult, procedures::changelog::CreateChangelogResult, semver::{core::SemVer, r#type::SemVerType, utils::{SemVerWithTag, find_latest_semver}}, std::{command::CommandOptions, panic::ExpectWithStatusCode}};
+use crate::{config::{Config, ToExitCode}, conventions::handler::resolve_semver_type, git::{log::{GitLog, get_logs}, push::push_tag, remote::{GitRemote, get_remote_names, get_remote_url}, tag::{GitTag, create_tag, get_log_by_tag, get_tags}}, log::log_debug, metafile::handler::HandleMetafilesResult, procedures::changelog::CreateChangelogResult, semver::{core::SemVer, r#type::SemVerType, utils::{SemVerWithTag, find_latest_semver}}, std::{command::CommandOptions, panic::ExpectWithStatusCode}};
 
 pub struct AnalyzeTagsResult {
   #[allow(dead_code)]
@@ -23,6 +23,12 @@ pub fn analyze_tags () -> AnalyzeTagsResult {
       &tag.content,
       &config.semver.as_ref().map(|v| v.format.clone()).flatten()
     ) {
+      log_debug(
+        &format!(
+          "Found SemVer: {:?}",
+          &inner_semver
+        )
+      );
       semver_with_tags.push(
         SemVerWithTag {
           semver: inner_semver,
@@ -37,6 +43,13 @@ pub fn analyze_tags () -> AnalyzeTagsResult {
       "Found no latest semver",
       config.to_exit_code()
     );
+
+  log_debug(
+    &format!(
+      "Latest SemVer with tag: {:?}",
+      &latest_semver_with_tags
+    )
+  );
 
   let latest_log = get_log_by_tag(
     &latest_semver_with_tags.tag,

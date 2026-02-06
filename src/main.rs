@@ -1,4 +1,4 @@
-use crate::{log::print_header, metafile::handler::handle_metafile, procedures::{changelog::create_changelog, config::process_config, git::{analyze_logs, analyze_tags, handle_tracking_batch, publish_tag}, semver::get_semver, webhooks::call_webhooks}};
+use crate::{config::Config, log::{log_debug, print_header}, metafile::handler::handle_metafile, procedures::{changelog::create_changelog, config::process_config, git::{analyze_logs, analyze_tags, handle_tracking_batch, publish_tag}, semver::get_semver, webhooks::call_webhooks}};
 
 mod git;
 mod config;
@@ -20,6 +20,13 @@ mod package;
 async fn main() {
   process_config();
   print_header();
+
+  log_debug(
+    &format!(
+      "Parsed config: {:?}",
+      Config::inject()
+    )
+  );
 
   // Analyze
   let analyze_tags_result = analyze_tags();

@@ -4,7 +4,7 @@ use reqwest::header::HeaderMap;
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
-use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, webhooks::config::WebhookItemConfig};
+use crate::{config::{Config, ToExitCode}, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::config::WebhookItemConfig};
 
 pub async fn post_create_release (
   webhook_item: &WebhookItemConfig,
@@ -25,6 +25,13 @@ pub async fn post_create_release (
   let mut headers = HeaderMap::new();
 
   headers.insert("User-Agent", get_user_agent().parse().unwrap());
+  
+  if let Some(token) = webhook_item.get_token() {
+    headers.insert(
+      "Authorization",
+      token.parse().unwrap()
+    );
+  }
 
   let mut body = HashMap::new();
 
@@ -38,12 +45,23 @@ pub async fn post_create_release (
   }
 
   client.post(
-    webhook_item.url.as_ref().expect("Webhook URL is not set")
+    webhook_item.url
+      .as_ref()
+      .expect_with_status_code(
+        "Webhook URL is not set",
+        config.to_exit_code()
+      )
   ).headers(headers)
     .body(
-      serde_json::to_string(&body).expect("Failed to serialize body")
+      serde_json::to_string(&body).expect_with_status_code(
+        "Failed to serialize body",
+        config.to_exit_code()
+      )
     )
     .send()
     .await
-    .expect("Failed to send request");
+    .expect_with_status_code(
+      "Failed to send request",
+      config.to_exit_code()
+    );
 }

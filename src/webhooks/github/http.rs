@@ -4,7 +4,7 @@ use reqwest::header::{HeaderMap};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
-use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, webhooks::{config::WebhookItemConfig, github::remote::GitHubRemote}};
+use crate::{config::{Config, ToExitCode}, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::{config::WebhookItemConfig, github::remote::GitHubRemote}};
 
 pub async fn post_create_release (
   webhook_item: &WebhookItemConfig,
@@ -31,7 +31,17 @@ pub async fn post_create_release (
   let mut headers = HeaderMap::new();
 
   headers.insert("Accept", "application/vnd.github+json".parse().unwrap());
-  headers.insert("Authorization", format!("Bearer {}", webhook_item.get_token().expect("Could not get token")).parse().unwrap());
+  headers.insert(
+    "Authorization",
+    format!(
+      "Bearer {}",
+      webhook_item.get_token()
+        .expect_with_status_code(
+          "Could not get token",
+          config.to_exit_code()
+        )
+    ).parse().unwrap()
+  );
   headers.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
   headers.insert("User-Agent", get_user_agent().parse().unwrap());
 
@@ -53,7 +63,7 @@ pub async fn post_create_release (
     url
   ).headers(headers)
     .body(
-      serde_json::to_string(&body).expect("Failed to serialize body")
+      serde_json::to_string(&body).expect_with_status_code("Failed to serialize body", config.to_exit_code())
     )
     .send()
     .await

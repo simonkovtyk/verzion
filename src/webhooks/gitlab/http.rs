@@ -4,7 +4,7 @@ use reqwest::header::HeaderMap;
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
-use crate::{config::Config, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, webhooks::{config::WebhookItemConfig, gitlab::remote::GitLabRemote}};
+use crate::{config::{Config, ToExitCode}, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::{config::WebhookItemConfig, gitlab::remote::GitLabRemote}};
 
 pub async fn post_create_release (
   webhook_item: &WebhookItemConfig,
@@ -63,5 +63,8 @@ pub async fn post_create_release (
     .body(serde_json::to_string(&body).expect("Could not serialize body"))
     .send()
     .await
-    .expect("Failed to send request");
+    .expect_with_status_code(
+      "Failed to send request",
+      config.to_exit_code()
+    );
 }

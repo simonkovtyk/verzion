@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use chrono::Utc;
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use clap::{ValueEnum};
@@ -13,21 +14,44 @@ pub enum LogLevel {
   Error = 1,
   Warn = 2,
   Info = 3,
-  Success = 4,
-  Debug = 5
+  Debug = 4
 }
 
+const DEFAULT_LOG_LEVEL: LogLevel = LogLevel::Info;
+
+#[allow(dead_code)]
+const ERROR_PREFIX: &str = "ERROR";
 #[allow(dead_code)]
 const WARN_PREFIX: &str = "WARN";
 #[allow(dead_code)]
 const INFO_PREFIX: &str = "INFO";
 #[allow(dead_code)]
-const ERROR_PREFIX: &str = "ERROR";
-#[allow(dead_code)]
-const SUCCESS_PREFIX: &str = "SUCCESS";
+const DEBUG_PREFIX: &str = "DEBUG";
 
 #[allow(dead_code)]
-pub fn log_info_raw <T: Debug> (value: T, log_level: &LogLevel) {
+pub fn log_debug (value: &str) {
+  let config = Config::inject();
+  let mut prefix = create_prefix(DEBUG_PREFIX);
+
+  if config.colored.unwrap_or(true) {
+    prefix = prefix.magenta().bold().to_string();
+  }
+
+  let config_log_level = config.log_level.clone().unwrap_or(DEFAULT_LOG_LEVEL);
+
+  if config_log_level < LogLevel::Debug {
+    return;
+  }
+
+  println!(
+    "{}\n{}\n",
+    prefix,
+    value
+  );
+}
+
+#[allow(dead_code)]
+pub fn log_info (value: &str) {
   let config = Config::inject();
   let mut prefix = create_prefix(INFO_PREFIX);
 
@@ -35,43 +59,21 @@ pub fn log_info_raw <T: Debug> (value: T, log_level: &LogLevel) {
     prefix = prefix.blue().bold().to_string();
   }
 
-  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
+  let config_log_level = config.log_level.clone().unwrap_or(DEFAULT_LOG_LEVEL);
 
-  if log_level > &config_log_level {
+  if config_log_level < LogLevel::Info {
     return;
   }
 
   println!(
-    "{} {:#?}",
+    "{}\n{}\n",
     prefix,
     value
   );
 }
 
 #[allow(dead_code)]
-pub fn log_info (value: &str, log_level: &LogLevel) {
-  let config = Config::inject();
-  let mut prefix = create_prefix(INFO_PREFIX);
-
-  if config.colored.unwrap_or(true) {
-    prefix = prefix.blue().bold().to_string();
-  }
-
-  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
-
-  if log_level > &config_log_level {
-    return;
-  }
-
-  println!(
-    "{} {}",
-    prefix,
-    value
-  );
-}
-
-#[allow(dead_code)]
-pub fn log_error (value: &str, log_level: &LogLevel) {
+pub fn log_error (value: &str) {
   let config = Config::inject();
   let mut prefix = create_prefix(ERROR_PREFIX);
 
@@ -79,43 +81,21 @@ pub fn log_error (value: &str, log_level: &LogLevel) {
     prefix = prefix.red().bold().to_string();
   }
 
-  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
+  let config_log_level = config.log_level.clone().unwrap_or(DEFAULT_LOG_LEVEL);
 
-  if log_level > &config_log_level {
+  if config_log_level < LogLevel::Error {
     return;
   }
 
   eprintln!(
-    "{} {}",
+    "{}\n{}\n",
     prefix,
     value
   );
 }
 
 #[allow(dead_code)]
-pub fn log_success (value: &str, log_level: &LogLevel) {
-  let config = Config::inject();
-  let mut prefix = create_prefix(SUCCESS_PREFIX);
-
-  if config.colored.unwrap_or(true) {
-    prefix = prefix.green().bold().to_string();
-  }
-
-  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
-
-  if log_level > &config_log_level {
-    return;
-  }
-
-  println!(
-    "{} {}",
-    prefix,
-    value
-  );
-}
-
-#[allow(dead_code)]
-pub fn log_warn (value: &str, log_level: &LogLevel) {
+pub fn log_warn (value: &str) {
   let config = Config::inject();
   let mut prefix = create_prefix(WARN_PREFIX);
 
@@ -123,14 +103,14 @@ pub fn log_warn (value: &str, log_level: &LogLevel) {
     prefix = prefix.yellow().bold().to_string();
   }
 
-  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Success);
+  let config_log_level = config.log_level.clone().unwrap_or(LogLevel::Warn);
 
-  if log_level > &config_log_level {
+  if config_log_level < LogLevel::Warn {
     return;
   }
 
   eprintln!(
-    "{} {}",
+    "{}\n{}\n",
     prefix,
     value
   );
@@ -146,7 +126,9 @@ ___  __ __________________|__| ____   ____
 ";
 
 pub fn create_prefix (value: &str) -> String {
-  format!("[{}]", value)
+  let time = Utc::now().to_rfc3339();
+
+  format!("[{} @ {}]", value, time)
 }
 
 pub fn print_header () {
