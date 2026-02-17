@@ -1,3 +1,5 @@
+use crate::log::log_error;
+
 pub const EXIT_ERROR: i32 = 1;
 pub const EXIT_SUCCESS: i32 = 0;
 
@@ -10,7 +12,7 @@ impl <T> ExpectWithStatusCode<T> for Option<T> {
     match self {
       Some(value) => value,
       None => {
-        eprintln!("{}", msg);
+        log_error(msg);
         std::process::exit(code);
       }
     }
@@ -22,7 +24,7 @@ impl <T, E> ExpectWithStatusCode<T> for Result<T, E> {
     match self {
       Ok(value) => value,
       Err(_) => {
-        eprintln!("{}", msg);
+        log_error(msg);
         std::process::exit(code);
       }
     }

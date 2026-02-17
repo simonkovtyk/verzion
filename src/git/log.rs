@@ -21,18 +21,10 @@ pub struct GitLog {
 
 pub fn get_log (hash: &str, options: CommandOptions) -> Result<GitLog, String> {
   let mut command = Command::new("git");
-  let pretty_format = "{
-\"message\":\"%s\",
-\"author_name\":\"%an\",
-\"author_email\":\"%ae\",
-\"author_timestamp\":%at,
-\"committer_name\":\"%cn\",
-\"committer_email\":\"%ce\",
-\"committer_timestamp\":%ct,
-\"hash\":\"%H\",
-\"abbr_hash\":\"%h\"
-}";
-
+  let pretty_format = format!(
+    "%s{sep}%an{sep}%ae{sep}%at{sep}%cn{sep}%ce{sep}%ct{sep}%H{sep}%h",
+    sep = LOG_SEPARATOR
+  );
   command.args(&[
     "log",
     "-1",
@@ -52,10 +44,23 @@ pub fn get_log (hash: &str, options: CommandOptions) -> Result<GitLog, String> {
   }
 
   let content = str::from_utf8(&output.stdout).map_err(|_| "Content contained invalid UTF-8")?;
+  let items: Vec<&str> = content.split(LOG_SEPARATOR).collect();
 
-  return serde_json::from_str(
-    &content
-  ).map_err(|_| "Failed to deserialize JSON".to_string());
+  return Ok(GitLog {
+    message: items[0].to_string(),
+    hash: items[7].to_string(),
+    abbr_hash: items[8].to_string(),
+    author: GitLogStakeholder {
+      name: items[1].to_string(),
+      email: items[2].to_string(),
+      timestamp: items[3].parse().ok()
+    },
+    comitter: GitLogStakeholder {
+      name: items[4].to_string(),
+      email: items[5].to_string(),
+      timestamp: items[6].parse().ok()
+    }
+  });
 }
 
 const LOG_SEPARATOR: char = '\x1f';

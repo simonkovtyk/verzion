@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{config::Config, git::remote::get_remote_url, std::command::CommandOptions, webhooks::{custom, github, gitlab}};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
 pub enum WebhookType {
   Custom,
   GitHub,

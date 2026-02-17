@@ -58,7 +58,5 @@ pub fn create_tag (value: &str, options: CommandOptions) -> Result<(), String> {
 pub fn get_log_by_tag (tag: &GitTag, options: CommandOptions) -> Result<GitLog, String> {
   let hash = get_rev_parse(&tag.content, options.clone())?;
 
-  println!("{}", hash);
-
   get_log(&hash, options)
 }

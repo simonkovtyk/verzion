@@ -3,7 +3,6 @@ use std::process::Command;
 use crate::std::command::CommandOptions;
 
 pub fn get_rev_parse (rev: &str, options: CommandOptions) -> Result<String, String> {
-  println!("{}", rev);
   let mut rev_parse_command = Command::new("git");
 
   rev_parse_command.args(&[

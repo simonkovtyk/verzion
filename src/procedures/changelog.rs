@@ -1,4 +1,4 @@
-use crate::{changelog::{git::get_commit_msg, handler::generate_changelog}, config::Config, fs::write_str_to_file, git::{log::GitLog, tracking::GitTrackingBatch}};
+use crate::{changelog::{git::get_commit_msg, handler::generate_changelog}, config::Config, fs::write_str_to_file, git::{log::GitLog, tracking::GitTrackingBatch}, log::log_debug};
 
 pub struct CreateChangelogResult {
   pub changelog: String,
@@ -29,6 +29,13 @@ pub fn create_changelog (
         tracking_batch.extend(inner_tracking_batch);
     }
   }
+
+  log_debug(
+    &format!(
+      "Generated changelog:\n{}",
+      &changelog
+    )
+  );
 
   Some(CreateChangelogResult {
     changelog,

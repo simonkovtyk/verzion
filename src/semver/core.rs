@@ -209,9 +209,9 @@ impl Merge for SemVer {
 impl Default for SemVer {
   fn default() -> Self {
     Self {
-      major: Some(0),
-      minor: Some(0),
-      patch: Some(0),
+      major: None,
+      minor: None,
+      patch: None,
       pre_release: None,
       iteration: None,
       metadata: None

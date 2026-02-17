@@ -1,4 +1,4 @@
-use crate::{config::{Config, ToExitCode}, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::{config::{WebhookItemConfig, WebhookType}, custom, github, gitlab}};
+use crate::{config::{Config, ToExitCode}, log::log_debug, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::{config::{WebhookItemConfig, WebhookType}, custom, github, gitlab}};
 
 async fn handle_webhook_item (
   webhook_item: &WebhookItemConfig,
@@ -48,6 +48,12 @@ pub async fn handle_webhook (
       "No webhook item in webhooks found",
       config.to_exit_code()
     ) {
+    log_debug(
+      &format!(
+        "Handling webhook item: {:?}",
+        &webhook_item
+      )
+    );
     handle_webhook_item(&webhook_item, semver, changelog).await;
   }
 }

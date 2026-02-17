@@ -1,4 +1,4 @@
-use crate::{config::Config, semver::{core::SemVer, r#type::SemVerType}};
+use crate::{config::Config, log::log_debug, semver::{core::SemVer, r#type::SemVerType}};
 
 pub struct GetSemVerResult {
   pub semver: SemVer
@@ -13,6 +13,10 @@ pub fn get_semver (
   let config_semver = config.semver.clone().map(|v| v.to_semver_with_format()).flatten();
 
   if let Some(inner_config_semver) = config_semver && inner_config_semver.is_fullfilled() {
+    log_debug(
+      &format!("Using SemVer from config: {:?}", &inner_config_semver)
+    );
+
     return GetSemVerResult {
       semver: inner_config_semver
     };
@@ -24,7 +28,16 @@ pub fn get_semver (
     SemVer::default()
   };
 
+  let semver = base_semver.bump(semver_type);
+
+  log_debug(
+    &format!(
+      "Calculated SemVer: {:?}",
+      &semver
+    )
+  );
+
   GetSemVerResult {
-    semver: base_semver.bump(semver_type)
+    semver
   }
 }

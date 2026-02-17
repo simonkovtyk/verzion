@@ -2,6 +2,7 @@ use std::{result::Result, process::Command};
 
 use crate::std::command::CommandOptions;
 
+#[derive(Debug)]
 pub struct GitRemote {
   pub name: String,
   #[allow(dead_code)]

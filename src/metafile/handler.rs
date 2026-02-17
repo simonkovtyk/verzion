@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::{config::Config, git::{tracking::GitTrackingBatch}, metafile::{config::MetafileTypes, git::get_commit_msg, java, node, plain}, semver::core::SemVer};
+use crate::{config::Config, git::tracking::GitTrackingBatch, log::log_debug, metafile::{config::MetafileTypes, git::get_commit_msg, java, node, plain}, semver::core::SemVer};
 
 pub struct HandleMetafilesResult {
   pub tracking_batch: GitTrackingBatch
@@ -36,6 +36,14 @@ pub fn handle_metafile (semver: &SemVer) -> Result<HandleMetafilesResult, String
               node::write::write_semver(inner_path_str, semver)?;
             }
           }
+
+          log_debug(
+            &format!(
+              "Updated metafile of type {:?} at path: {}",
+              metafile.r#type,
+              inner_path_str
+            )
+          );
 
           let tracking_path = metafile.tracking
             .as_ref()

@@ -61,6 +61,13 @@ pub fn analyze_tags () -> AnalyzeTagsResult {
     config.to_exit_code()
   );
 
+  log_debug(
+    &format!(
+      "Latest log by tag: {:?}",
+      &latest_log
+    )
+  );
+
   AnalyzeTagsResult {
     latest_log: latest_log,
     latest_tag: latest_semver_with_tags.tag,
@@ -86,7 +93,21 @@ pub fn analyze_logs (from: Option<GitLog>) -> AnalyzeLogsResult {
     config.to_exit_code()
   );
 
+  log_debug(
+    &format!(
+      "Analyzed logs: {:?}",
+      &logs
+    )
+  );
+
   let semver_type = resolve_semver_type(&logs);
+
+  log_debug(
+    &format!(
+      "Resolved SemVer type: {:?}",
+      semver_type
+    )
+  );
 
   AnalyzeLogsResult {
     semver_type,
@@ -104,7 +125,17 @@ pub fn publish_tag (
 ) -> PreparePublishResult {
   let config = Config::inject();
 
-  create_tag(&semver.to_string(), CommandOptions {
+  log_debug(
+    &format!(
+      "Publishing tag for SemVer: {:?}",
+      &semver.to_string()
+    )
+  );
+
+  create_tag(
+    &semver.format(
+      &config.semver.as_ref().map(|v| v.format.clone()).flatten()
+    ), CommandOptions {
     cwd: config.cwd.clone()
   }).expect_with_status_code(
     "Could not create tag",
@@ -129,6 +160,13 @@ pub fn publish_tag (
       url: url.clone(),
       name: remote_name
     };
+
+    log_debug(
+      &format!(
+        "Pushing to remote: {:?}",
+        &remote
+      )
+    );
 
     push_tag(
       &remote.name,
@@ -170,6 +208,13 @@ pub fn handle_tracking_batch (
   }
 
   if let Some(inner_tracking) = config.tracking.as_ref() {
+    log_debug(
+      &format!(
+        "Handling tracking batch: {:?}",
+        &tracking_batch
+      )
+    );
+
     inner_tracking
       .track_batch(
         semver,
