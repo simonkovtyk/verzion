@@ -1,14 +1,14 @@
 <div align="center">
 
-  <img width="64" height="64" src="./docs/logo.svg" />
-
   # Verzion
   Rust tool that analyzes Git commit histories to automatically determine version bumps and generate structured changelogs.
 
-  [![Last Release Badge](https://img.shields.io/github/v/release/simonkovtyk/verzion?sort=semver&display_name=release&color=7300ff&labelColor=27272a)](../../releases/latest)
-  [![GitHub License Badge](https://img.shields.io/github/license/simonkovtyk/verzion?color=7300ff&labelColor=27272a)](./LICENSE)
-  [![Contributions Welcomed Badge](https://img.shields.io/badge/contributions-welcomed-7300ff?labelColor=27272a)](#contributing)
+  [![Last Release Badge](https://img.shields.io/github/v/release/simonkovtyk/verzion?sort=semver&display_name=release&color=7300ff&labelColor=27272a&logo=hackthebox&logoColor=ffffff)](../../releases/latest)
+  [![GitHub License Badge](https://img.shields.io/github/license/simonkovtyk/verzion?color=7300ff&labelColor=27272a&logo=bookstack&logoColor=ffffff)](./LICENSE)
+  [![Contributions Welcomed Badge](https://img.shields.io/badge/contributions-welcomed-7300ff?labelColor=27272a&logo=git-extensions&logoColor=ffffff)](#contributing)
   [![Sponsor Hint Badge](https://img.shields.io/badge/❤️-Sponsor_it-%23dc2626?style=flat&labelColor=27272a)](https://github.com/sponsors/simonkovtyk/)
+
+  ![Preview](./docs/preview.svg)
 
 </div>
 
@@ -31,8 +31,8 @@ It supports multiple project types, making it easy to integrate into diverse dev
 *If you are still missing an integration, [consider creating a feature-request or pull-request](#contributing)*
 
 ## Roadmap
-- [ ] Add GitHub API integration
-- [ ] Add GitLab API integration
+- [x] Add GitHub API integration
+- [x] Add GitLab API integration
 - [ ] Provide a GitHub Action abstraction
 
 ## License
