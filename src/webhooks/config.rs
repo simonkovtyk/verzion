@@ -19,7 +19,8 @@ pub struct WebhookItemConfig {
   pub url: Option<String>,
   pub token: Option<String>,
   pub token_env: Option<String>,
-  pub http_retries: Option<u32>
+  pub http_retries: Option<u32>,
+  pub http_timeout: Option<u64>
 }
 
 impl WebhookItemConfig {
@@ -46,7 +47,8 @@ impl WebhookItemConfig {
     url: Option<String>,
     token: Option<String>,
     token_env: Option<String>,
-    http_retries: Option<u32>
+    http_retries: Option<u32>,
+    http_timeout: Option<u64>
   ) -> Option<Self> {
     let instance = Self {
       r#type,
@@ -55,7 +57,8 @@ impl WebhookItemConfig {
       url,
       token,
       token_env,
-      http_retries
+      http_retries,
+      http_timeout
     };
 
     if instance.is_empty() {

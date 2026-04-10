@@ -1,10 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap};
 
-use reqwest::header::HeaderMap;
-use reqwest_middleware::ClientBuilder;
-use reqwest_retry::RetryTransientMiddleware;
+use reqwest::{header::HeaderMap};
+use reqwest_middleware::ClientWithMiddleware;
 
-use crate::{config::{Config, ToExitCode}, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::{config::WebhookItemConfig, gitlab::remote::GitLabRemote}};
+use crate::{config::{Config, ToExitCode}, http::{get_user_agent}, semver::core::SemVer, std::{panic::ExpectWithStatusCode, reqwest::FromWebhookItemConfig}, webhooks::{config::WebhookItemConfig, gitlab::remote::GitLabRemote}};
 
 pub async fn post_create_release (
   webhook_item: &WebhookItemConfig,
@@ -13,15 +12,6 @@ pub async fn post_create_release (
   changelog: &Option<String>
 ) {
   let config = Config::inject();
-
-  let client = ClientBuilder::new(reqwest::Client::new())
-    .with(
-      RetryTransientMiddleware::new_with_policy(
-        get_retry_policy(
-          webhook_item.http_retries
-        )
-      )
-    ).build();
 
   let remote_url = &mut remote.url.clone();
   remote_url.set_path("");
@@ -41,7 +31,7 @@ pub async fn post_create_release (
   headers.insert("Content-Type", "application/json".parse().unwrap());
   headers.insert("PRIVATE-TOKEN", webhook_item.get_token().expect("Could not get token").parse().unwrap());
   headers.insert("User-Agent", get_user_agent().parse().unwrap());
-  
+
   let mut body = HashMap::new();
 
   let semver_format = semver.format(
@@ -56,6 +46,8 @@ pub async fn post_create_release (
   if let Some(inner_changelog) = changelog {
     body.insert("description", inner_changelog.as_str());
   }
+
+  let client = ClientWithMiddleware::from_webhook_item_config(webhook_item);
 
   client.post(
     url

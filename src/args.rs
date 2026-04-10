@@ -2,7 +2,7 @@ use std::{env};
 
 use clap::Parser;
 
-use crate::{changelog::config::{ChangelogConfig, ChangelogType}, config::{Config, ToExitCode}, conventions::config::ConvetionTypes, git::tracking::{GitTracking, GitTrackingRoot, GitTrackingStrategy}, log::LogLevel, semver::config::SemVerConfig, std::panic::{EXIT_ERROR, EXIT_SUCCESS, ExpectWithStatusCode}};
+use crate::{changelog::config::{ChangelogConfig, ChangelogType}, config::{Config, ToExitCode}, conventions::config::ConvetionTypes, git::tracking::{GitTracking, GitTrackingRoot, GitTrackingStrategy}, log::LogLevel, semver::config::SemVerConfig, std::{option::ToOption, panic::{EXIT_ERROR, EXIT_SUCCESS, ExpectWithStatusCode}}, webhooks::config::{WebhookItemConfig, WebhookType}};
 
 #[derive(Parser, Debug, Clone)]
 #[command(
@@ -53,6 +53,8 @@ pub struct Args {
   pub changelog_tracking_enabled: Option<bool>,
   #[arg(long, help = "Strategy to use while tracking changelogs", help_heading = "Changelog")]
   pub changelog_tracking_strategy: Option<GitTrackingStrategy>,
+  #[arg(long, help = "Use changelog in Webhooks", help_heading = "Changelog")]
+  pub changelog_use_in_webhooks: Option<bool>,
   #[arg(long, help = "Message to use while tracking changelogs", help_heading = "Changelog")]
   pub changelog_tracking_message: Option<String>,
 
@@ -72,7 +74,53 @@ pub struct Args {
   #[arg(long, help = "Force SemVer Iteration", help_heading = "SemVer")]
   pub semver_iteration: Option<u64>,
   #[arg(long, help = "Force SemVer Metadata", help_heading = "SemVer")]
-  pub semver_metadata: Option<Vec<String>>
+  pub semver_metadata: Option<Vec<String>>,
+
+  /* webhook */
+  #[arg(long, help = "Create a Webhook with origin", help_heading = "Webhook")]
+  pub webhook_custom_origin: Option<String>,
+  #[arg(long, help = "Create a Webhook with enablement", help_heading = "Webhook")]
+  pub webhook_custom_enabled: Option<bool>,
+  #[arg(long, help = "Create a Webhook with url", help_heading = "Webhook")]
+  pub webhook_custom_url: Option<String>,
+  #[arg(long, help = "Create a Webhook with token", help_heading = "Webhook")]
+  pub webhook_custom_token: Option<String>,
+  #[arg(long, help = "Create a Webhook with token env", help_heading = "Webhook")]
+  pub webhook_custom_token_env: Option<String>,
+  #[arg(long, help = "Create a Webhook with HTTP retries", help_heading = "Webhook")]
+  pub webhook_custom_http_retries: Option<u32>,
+  #[arg(long, help = "Create a Webhook with HTTP retries", help_heading = "Webhook")]
+  pub webhook_custom_http_timeout: Option<u64>,
+
+  #[arg(long, help = "Create a Webhook with origin", help_heading = "Webhook")]
+  pub webhook_gitlab_origin: Option<String>,
+  #[arg(long, help = "Create a Webhook with enablement", help_heading = "Webhook")]
+  pub webhook_gitlab_enabled: Option<bool>,
+  #[arg(long, help = "Create a Webhook with url", help_heading = "Webhook")]
+  pub webhook_gitlab_url: Option<String>,
+  #[arg(long, help = "Create a Webhook with token", help_heading = "Webhook")]
+  pub webhook_gitlab_token: Option<String>,
+  #[arg(long, help = "Create a Webhook with token env", help_heading = "Webhook")]
+  pub webhook_gitlab_token_env: Option<String>,
+  #[arg(long, help = "Create a Webhook with HTTP retries", help_heading = "Webhook")]
+  pub webhook_gitlab_http_retries: Option<u32>,
+  #[arg(long, help = "Create a Webhook with HTTP retries", help_heading = "Webhook")]
+  pub webhook_gitlab_http_timeout: Option<u64>,
+
+  #[arg(long, help = "Create a Webhook with enablement", help_heading = "Webhook")]
+  pub webhook_github_origin: Option<String>,
+  #[arg(long, help = "Create a Webhook with enablement", help_heading = "Webhook")]
+  pub webhook_github_enabled: Option<bool>,
+  #[arg(long, help = "Create a Webhook with url", help_heading = "Webhook")]
+  pub webhook_github_url: Option<String>,
+  #[arg(long, help = "Create a Webhook with token", help_heading = "Webhook")]
+  pub webhook_github_token: Option<String>,
+  #[arg(long, help = "Create a Webhook with token env", help_heading = "Webhook")]
+  pub webhook_github_token_env: Option<String>,
+  #[arg(long, help = "Create a Webhook with HTTP retries", help_heading = "Webhook")]
+  pub webhook_github_http_retries: Option<u32>,
+  #[arg(long, help = "Create a Webhook with HTTP retries", help_heading = "Webhook")]
+  pub webhook_github_http_timeout: Option<u64>
 }
 
 impl Args {
@@ -105,6 +153,53 @@ impl ToExitCode for Args {
 
 impl Into<Config> for Args {
   fn into(self) -> Config {
+    let mut webhook_config = Vec::new();
+
+    let custom = WebhookItemConfig::new(
+      Some(WebhookType::Custom),
+      self.webhook_custom_origin,
+      self.webhook_custom_enabled,
+      self.webhook_custom_url,
+      self.webhook_custom_token,
+      self.webhook_custom_token_env,
+      self.webhook_custom_http_retries,
+      self.webhook_custom_http_timeout
+    );
+
+    if let Some(value) = custom {
+      webhook_config.push(value);
+    }
+
+    let gitlab = WebhookItemConfig::new(
+      Some(WebhookType::GitLab),
+      self.webhook_gitlab_origin,
+      self.webhook_gitlab_enabled,
+      self.webhook_gitlab_url,
+      self.webhook_gitlab_token,
+      self.webhook_gitlab_token_env,
+      self.webhook_gitlab_http_retries,
+      self.webhook_gitlab_http_timeout
+    );
+
+    if let Some(value) = gitlab {
+      webhook_config.push(value);
+    }
+
+    let github = WebhookItemConfig::new(
+      Some(WebhookType::GitHub),
+      self.webhook_github_origin,
+      self.webhook_github_enabled,
+      self.webhook_github_url,
+      self.webhook_github_token,
+      self.webhook_github_token_env,
+      self.webhook_github_http_retries,
+      self.webhook_github_http_timeout
+    );
+
+    if let Some(value) = github {
+      webhook_config.push(value);
+    }
+
     Config {
       graceful: self.graceful,
       cwd: self.cwd,
@@ -134,13 +229,14 @@ impl Into<Config> for Args {
         self.changelog_type,
         self.changelog_path,
         self.changelog_template_path,
+        self.changelog_use_in_webhooks,
         GitTracking::new(
           self.changelog_tracking_enabled,
           self.changelog_tracking_strategy,
           self.changelog_tracking_message
         )
       ),
-      webhooks: None
+      webhooks: webhook_config.to_option()
     }
   }
 }

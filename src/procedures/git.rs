@@ -1,5 +1,6 @@
 use crate::{config::{Config, ToExitCode}, conventions::handler::resolve_semver_type, git::{log::{GitLog, get_logs}, push::push_tag, remote::{GitRemote, get_remote_names, get_remote_url}, tag::{GitTag, create_tag, get_log_by_tag, get_tags}}, log::log_debug, metafile::handler::HandleMetafilesResult, procedures::changelog::CreateChangelogResult, semver::{core::SemVer, r#type::SemVerType, utils::{SemVerWithTag, find_latest_semver}}, std::{command::CommandOptions, panic::ExpectWithStatusCode}};
 
+#[derive(Debug, Clone)]
 pub struct AnalyzeTagsResult {
   #[allow(dead_code)]
   pub latest_tag: GitTag,
@@ -7,14 +8,11 @@ pub struct AnalyzeTagsResult {
   pub latest_semver: SemVer
 }
 
-pub fn analyze_tags () -> AnalyzeTagsResult {
+pub fn analyze_tags () -> Option<AnalyzeTagsResult> {
   let config = Config::inject();
   let tags = get_tags(CommandOptions {
     cwd: config.cwd.clone()
-  }).expect_with_status_code(
-    "No tags found",
-    config.to_exit_code()
-  );
+  }).ok()?;
 
   let mut semver_with_tags: Vec<SemVerWithTag> = Vec::new();
 
@@ -38,11 +36,7 @@ pub fn analyze_tags () -> AnalyzeTagsResult {
     }
   }
 
-  let latest_semver_with_tags = find_latest_semver(semver_with_tags)
-    .expect_with_status_code(
-      "Found no latest semver",
-      config.to_exit_code()
-    );
+  let latest_semver_with_tags = find_latest_semver(semver_with_tags)?;
 
   log_debug(
     &format!(
@@ -56,10 +50,7 @@ pub fn analyze_tags () -> AnalyzeTagsResult {
     CommandOptions {
       cwd: config.cwd.clone()
     }
-  ).expect_with_status_code(
-    "Latest log could not be gathered",
-    config.to_exit_code()
-  );
+  ).ok()?;
 
   log_debug(
     &format!(
@@ -68,11 +59,13 @@ pub fn analyze_tags () -> AnalyzeTagsResult {
     )
   );
 
-  AnalyzeTagsResult {
-    latest_log: latest_log,
-    latest_tag: latest_semver_with_tags.tag,
-    latest_semver: latest_semver_with_tags.semver
-  }
+  Some(
+    AnalyzeTagsResult {
+      latest_log: latest_log,
+      latest_tag: latest_semver_with_tags.tag,
+      latest_semver: latest_semver_with_tags.semver
+    }
+  )
 }
 
 pub struct AnalyzeLogsResult {

@@ -30,8 +30,8 @@ async fn main() {
 
   // Analyze
   let analyze_tags_result = analyze_tags();
-  let analyze_logs_result = analyze_logs(Some(analyze_tags_result.latest_log));
-  let get_semver_result = get_semver(&analyze_logs_result.semver_type, Some(analyze_tags_result.latest_semver));
+  let analyze_logs_result = analyze_logs(analyze_tags_result.as_ref().map(|v| v.latest_log.clone()));
+  let get_semver_result = get_semver(&analyze_logs_result.semver_type, analyze_tags_result.as_ref().map(|value| value.latest_semver.clone()));
   let create_changelog_result = create_changelog(&analyze_logs_result.logs);
   let handle_metafile_result = handle_metafile(&get_semver_result.semver);
 

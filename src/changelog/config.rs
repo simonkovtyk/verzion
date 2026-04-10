@@ -24,7 +24,8 @@ pub struct ChangelogConfig {
   pub r#type: Option<ChangelogType>,
   pub path: Option<String>,
   pub tracking: Option<GitTracking>,
-  pub template_path: Option<String>
+  pub template_path: Option<String>,
+  pub use_in_webhooks: Option<bool>
 }
 
 impl ChangelogConfig {
@@ -41,6 +42,7 @@ impl ChangelogConfig {
     r#type: Option<ChangelogType>,
     path: Option<String>,
     template_path: Option<String>,
+    use_in_webhooks: Option<bool>,
     tracking: Option<GitTracking>
   ) -> Option<Self> {
     let instance = Self {
@@ -48,7 +50,8 @@ impl ChangelogConfig {
       r#type,
       path,
       tracking,
-      template_path
+      template_path,
+      use_in_webhooks
     };
 
     if instance.is_empty() {
@@ -66,7 +69,8 @@ impl Merge for ChangelogConfig {
       r#type: self.r#type.merge(other.r#type),
       path: self.path.or(other.path),
       tracking: self.tracking.merge(other.tracking),
-      template_path: other.template_path
+      template_path: other.template_path,
+      use_in_webhooks: self.use_in_webhooks.merge(other.use_in_webhooks)
     }
   }
 }
