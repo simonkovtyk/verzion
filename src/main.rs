@@ -1,4 +1,4 @@
-use crate::{config::Config, log::{log_debug, print_header}, metafile::handler::handle_metafile, procedures::{changelog::create_changelog, config::process_config, git::{analyze_logs, analyze_tags, handle_tracking_batch, publish_tag}, semver::get_semver, webhooks::call_webhooks}};
+use crate::{config::Config, log::{log_debug, log_info, print_header}, metafile::handler::handle_metafile, procedures::{changelog::create_changelog, config::process_config, git::{analyze_logs, analyze_tags, handle_tracking_batch, publish_tag}, semver::get_semver, webhooks::call_webhooks}};
 
 mod git;
 mod config;
@@ -48,4 +48,8 @@ async fn main() {
     &get_semver_result,
     &create_changelog_result
   ).await;
+
+  log_info(
+    "Successfully terminated"
+  );
 }

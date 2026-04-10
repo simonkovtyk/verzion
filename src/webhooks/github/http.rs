@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
 use reqwest::header::{HeaderMap};
-use reqwest_middleware::ClientBuilder;
-use reqwest_retry::RetryTransientMiddleware;
+use reqwest_middleware::ClientWithMiddleware;
 
-use crate::{config::{Config, ToExitCode}, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::{config::WebhookItemConfig, github::remote::GitHubRemote}};
+use crate::{config::{Config, ToExitCode}, http::{get_user_agent}, semver::core::SemVer, std::{panic::ExpectWithStatusCode, reqwest::FromWebhookItemConfig}, webhooks::{config::WebhookItemConfig, github::remote::GitHubRemote}};
 
 pub async fn post_create_release (
   webhook_item: &WebhookItemConfig,
@@ -13,15 +12,6 @@ pub async fn post_create_release (
   changelog: &Option<String>
 ) {
   let config = Config::inject();
-
-  let client = ClientBuilder::new(reqwest::Client::new())
-    .with(
-      RetryTransientMiddleware::new_with_policy(
-        get_retry_policy(
-          webhook_item.http_retries
-        )
-      )
-    ).build();
 
   let url = format!(
     "https://api.github.com/repos/{}/{}/releases",
@@ -58,6 +48,8 @@ pub async fn post_create_release (
   if let Some(inner_changelog) = changelog {
     body.insert("body", inner_changelog.as_str());
   }
+
+  let client = ClientWithMiddleware::from_webhook_item_config(webhook_item);
 
   client.post(
     url

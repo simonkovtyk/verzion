@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
 use reqwest::header::HeaderMap;
-use reqwest_middleware::ClientBuilder;
-use reqwest_retry::RetryTransientMiddleware;
+use reqwest_middleware::ClientWithMiddleware;
 
-use crate::{config::{Config, ToExitCode}, http::{get_retry_policy, get_user_agent}, semver::core::SemVer, std::panic::ExpectWithStatusCode, webhooks::config::WebhookItemConfig};
+use crate::{config::{Config, ToExitCode}, http::{get_user_agent}, semver::core::SemVer, std::{panic::ExpectWithStatusCode, reqwest::FromWebhookItemConfig}, webhooks::config::WebhookItemConfig};
 
 pub async fn post_create_release (
   webhook_item: &WebhookItemConfig,
@@ -13,19 +12,10 @@ pub async fn post_create_release (
 ) {
   let config = Config::inject();
 
-  let client = ClientBuilder::new(reqwest::Client::new())
-    .with(
-      RetryTransientMiddleware::new_with_policy(
-        get_retry_policy(
-          webhook_item.http_retries
-        )
-      )
-    ).build();
-
   let mut headers = HeaderMap::new();
 
   headers.insert("User-Agent", get_user_agent().parse().unwrap());
-  
+
   if let Some(token) = webhook_item.get_token() {
     headers.insert(
       "Authorization",
@@ -43,6 +33,8 @@ pub async fn post_create_release (
   if let Some(inner_changelog) = changelog {
     body.insert("changelog", inner_changelog.clone());
   }
+
+  let client = ClientWithMiddleware::from_webhook_item_config(webhook_item);
 
   client.post(
     webhook_item.url
